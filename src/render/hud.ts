@@ -118,9 +118,9 @@ function drawMinimap(
     const ox = x + w / 2 - ((minX + maxX) / 2) * scale;
     const oy = y + h / 2 - ((minY + maxY) / 2) * scale;
 
-    // Trajeto do circuito (linha fechada)
-    ctx.strokeStyle = '#3d4a80';
-    ctx.lineWidth = 1;
+    // Trajeto do circuito (linha fechada, mais visível)
+    ctx.strokeStyle = '#5a6a90';
+    ctx.lineWidth = 2;
     ctx.beginPath();
     map.forEach(([mx, my], index) => {
       const px = ox + mx * scale;
@@ -129,25 +129,31 @@ function drawMinimap(
       else ctx.lineTo(px, py);
     });
     // Fecha o loop do circuito
-    const [firstX, firstY] = map[0];
-    const [lastX, lastY] = map[map.length - 1];
-    if (firstX !== lastX || firstY !== lastY) {
-      ctx.lineTo(ox + firstX * scale, oy + firstY * scale);
-    }
+    ctx.closePath();
     ctx.stroke();
 
-    // Linha de chegada (pontilhada no começo do mapa)
+    // Borda interna do traçado (dá profundidade)
+    ctx.strokeStyle = '#2a3560';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    map.forEach(([mx, my], index) => {
+      const px = ox + mx * scale * 0.88;
+      const py = oy + my * scale * 0.88;
+      if (index === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    });
+    ctx.closePath();
+    ctx.stroke();
+
+    // Linha de chegada (bandeira quadriculada no começo do mapa)
     const [fx, fy] = map[0];
     const fpx = ox + fx * scale;
     const fpy = oy + fy * scale;
-    ctx.strokeStyle = '#ffd23f';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(fpx - 2, fpy - 2);
-    ctx.lineTo(fpx + 2, fpy + 2);
-    ctx.moveTo(fpx - 2, fpy + 2);
-    ctx.lineTo(fpx + 2, fpy - 2);
-    ctx.stroke();
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillRect(fpx - 2, fpy - 2, 4, 4);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(fpx - 1, fpy - 1, 2, 2);
+    ctx.fillRect(fpx + 1, fpy + 1, 2, 2);
   }
 
   const padding = 2;

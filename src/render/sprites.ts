@@ -11,6 +11,7 @@ export interface CarDrawOptions {
   tilt?: number;
   player?: boolean;
   carNumber?: number;
+  alpha?: number;
 }
 
 function poly(ctx: CanvasRenderingContext2D, points: Array<[number, number]>, color: string): void {
@@ -52,6 +53,9 @@ export function drawCar(
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(baseY));
+
+  const alpha = opts.alpha ?? 1;
+  ctx.globalAlpha = alpha;
 
   if (tilt !== 0) {
     ctx.rotate(tilt * 0.055);
@@ -206,6 +210,33 @@ export function drawCar(
     ctx.fillStyle = '#5a5a6a';
     ctx.fillRect(-half * 0.3, -h * 0.095, Math.max(1, half * 0.07), Math.max(1, h * 0.04));
     ctx.fillRect(half * 0.23, -h * 0.095, Math.max(1, half * 0.07), Math.max(1, h * 0.04));
+
+    // grade dianteira (visível abaixo do para-choque)
+    ctx.fillStyle = '#1a1a24';
+    ctx.fillRect(-half * 0.35, -h * 0.22, half * 0.7, Math.max(1, h * 0.05));
+    ctx.fillStyle = '#4a4a5a';
+    for (let g = 0; g < 5; g += 1) {
+      ctx.fillRect(-half * 0.32 + g * half * 0.14, -h * 0.215, Math.max(1, half * 0.06), Math.max(1, h * 0.04));
+    }
+
+    // faróis dianteiros (pequenos pontos de luz abaixo da carroceria)
+    ctx.fillStyle = '#fff4c2';
+    ctx.fillRect(-half * 0.55, -h * 0.28, Math.max(1, half * 0.08), Math.max(1, h * 0.04));
+    ctx.fillRect(half * 0.47, -h * 0.28, Math.max(1, half * 0.08), Math.max(1, h * 0.04));
+
+    // espelhos retrovisores laterais
+    ctx.fillStyle = '#2a2a36';
+    ctx.fillRect(-half * 0.78, -h * 0.18, Math.max(1, half * 0.05), Math.max(1, h * 0.03));
+    ctx.fillRect(half * 0.73, -h * 0.18, Math.max(1, half * 0.05), Math.max(1, h * 0.03));
+    ctx.fillStyle = '#8a8a9a';
+    ctx.fillRect(-half * 0.78 + 0.5, -h * 0.175, Math.max(1, half * 0.03), Math.max(1, h * 0.02));
+    ctx.fillRect(half * 0.73 + 0.5, -h * 0.175, Math.max(1, half * 0.03), Math.max(1, h * 0.02));
+
+    // antena (jogador)
+    if (opts.player && h > 16) {
+      ctx.fillStyle = '#1a1a24';
+      ctx.fillRect(-half * 0.1, roofTop - h * 0.05, Math.max(1, half * 0.02), h * 0.08);
+    }
 
     // aerofólio (jogador)
     if (opts.player) {

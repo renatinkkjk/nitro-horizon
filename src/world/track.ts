@@ -125,7 +125,8 @@ function buildMap(segments: Segment[]): Array<[number, number]> {
   let heading = 0;
   let x = 0;
   let y = 0;
-  const sampleEvery = Math.max(1, Math.floor(segments.length / 180));
+  // Amostra mais densa para o traçado ficar suave no minimapa.
+  const sampleEvery = Math.max(1, Math.floor(segments.length / 360));
 
   for (let i = 0; i < segments.length; i++) {
     heading += segments[i].curve * 0.0034;
@@ -134,15 +135,25 @@ function buildMap(segments: Segment[]): Array<[number, number]> {
     if (i % sampleEvery === 0) points.push([x, y]);
   }
 
-  // Fecha o circuito: garante que o último ponto seja o mesmo que o primeiro,
-  // então o minimapa é um loop contínuo (não uma linha aberta).
-  points.push([0, 0]);
+  // O circuito pode não voltar exatamente ao ponto de partida (x,y != 0,0)
+  // mesmo que a direção volte. Ajustamos todos os pontos com uma correção
+  // linear para forçar o fechamento perfeito em (0,0).
+  const endX = x;
+  const endY = y;
+  const corrected: Array<[number, number]> = [];
+  for (let i = 0; i < points.length; i += 1) {
+    const t = i / Math.max(1, points.length - 1);
+    corrected.push([
+      points[i][0] - endX * t,
+      points[i][1] - endY * t,
+    ]);
+  }
 
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
-  for (const [px, py] of points) {
+  for (const [px, py] of corrected) {
     minX = Math.min(minX, px);
     maxX = Math.max(maxX, px);
     minY = Math.min(minY, py);
@@ -153,7 +164,7 @@ function buildMap(segments: Segment[]): Array<[number, number]> {
   const spanY = maxY - minY || 1;
   const span = Math.max(spanX, spanY);
 
-  return points.map(([px, py]) => [
+  return corrected.map(([px, py]) => [
     ((px - minX) / span) * 2 - 1,
     ((py - minY) / span) * 2 - 1,
   ]);

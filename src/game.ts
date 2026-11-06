@@ -399,7 +399,7 @@ export class Game {
     const visibleIndex = new Map<number, number>();
     visible.forEach((segment, index) => visibleIndex.set(segment.index, index));
 
-    const list: Array<{ visible: number; racer: Racer; pct: number }> = [];
+    const list: Array<{ visible: number; racer: Racer; pct: number; tooClose: boolean }> = [];
 
     for (const racer of racers) {
       if (racer === player) continue;
@@ -410,14 +410,14 @@ export class Game {
       // muito próximos (gap < 500) — isso fazia o oponente sumir ao encostar.
       const gap = mod(racer.distance - cameraZ, track.length);
       if (gap > DRAW_DISTANCE * SEGMENT_LENGTH) continue;
-      // Não desenhar oponente que está colado no jogador (gap mínimo) — evita que o carro
-      // projete com escala gigantesca e pise/suma quando está muito perto da frente.
-      if (gap < 180) continue;
+      // Quando o oponente está muito perto (colado na frente), não pule desenhar —
+      // apenas limite o tamanho para não explodir a escala e fazer o carro sumir/pisca.
+      const tooClose = gap < 220;
 
       const index = Math.floor(z / SEGMENT_LENGTH) % track.segments.length;
       const visiblePosition = visibleIndex.get(index);
       if (visiblePosition === undefined) continue;
-      list.push({ visible: visiblePosition, racer, pct: (z % SEGMENT_LENGTH) / SEGMENT_LENGTH });
+      list.push({ visible: visiblePosition, racer, pct: (z % SEGMENT_LENGTH) / SEGMENT_LENGTH, tooClose });
     }
 
     // Desenha do mais distante para o mais próximo (painter's algorithm).
@@ -436,14 +436,20 @@ export class Game {
 
       if (cy < segment.clip) continue;
 
-      const w = (scale * CAR_WORLD_WIDTH * WIDTH) / 2;
-      const h = (scale * CAR_WORLD_HEIGHT * HEIGHT) / 2;
+      let w = (scale * CAR_WORLD_WIDTH * WIDTH) / 2;
+      let h = (scale * CAR_WORLD_HEIGHT * HEIGHT) / 2;
       if (w < 1.5 || h < 1.5) continue;
-      // Limite máximo para não cobrir a tela inteira, mas permite carro próximo.
-      if (w > WIDTH * 0.85) continue;
+      // Limite máximo para oponente não ficar maior que o carro do jogador nem cobrir a tela.
+      if (w > WIDTH * 0.55) w = WIDTH * 0.55;
+      if (h > HEIGHT * 0.55) h = HEIGHT * 0.55;
       if (cx < -w || cx > WIDTH + w) continue;
 
-      drawCar(ctx, cx, cy, w, h, { body: item.racer.body, accent: item.racer.accent }, { carNumber: item.racer.id + 1 });
+      drawCar(ctx, cx, cy, w, h, { body: item.racer.body, accent: item.racer.accent }, {
+        carNumber: item.racer.id + 1,
+        // Quando está muito perto (colado), deixa ligeiramente semitransparente para não
+        // confundir com o carro do jogador.
+        alpha: item.tooClose ? 0.85 : 1,
+      });
     }
   }
 
@@ -504,10 +510,17 @@ export class Game {
 
     const dots: MinimapDot[] = race.racers.map((racer) => {
       // Como a pista é um circuito, usamos a distância normalizada [0,1]
-      // para indexar o mapa (que agora é um loop fechado).
+      // para indexar o mapa. Interpolamos entre dois pontos adjacentes para
+      // o carro se mover suavemente no minimapa em vez de pular de ponto em ponto.
       const t = mod(racer.distance, race.track.length) / race.track.length;
-      const index = Math.min(last, Math.max(0, Math.floor(t * last)));
-      const [x, y] = race.track.map[index];
+      const floatIndex = t * last;
+      const i0 = Math.floor(floatIndex) % mapLength;
+      const i1 = (i0 + 1) % mapLength;
+      const frac = floatIndex - Math.floor(floatIndex);
+      const [x0, y0] = race.track.map[i0];
+      const [x1, y1] = race.track.map[i1];
+      const x = lerp(x0, x1, frac);
+      const y = lerp(y0, y1, frac);
       return { x, y, color: racer.body, isPlayer: racer.isPlayer };
     });
 
