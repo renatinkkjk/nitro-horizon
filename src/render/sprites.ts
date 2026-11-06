@@ -21,7 +21,15 @@ function poly(ctx: CanvasRenderingContext2D, points: Array<[number, number]>, co
   ctx.fill();
 }
 
-/** Carro visto de trás. (cx, baseY) = centro inferior em pixels. */
+function shade(hex: string, factor: number): string {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.max(0, Math.round(((n >> 16) & 255) * factor)));
+  const g = Math.min(255, Math.max(0, Math.round(((n >> 8) & 255) * factor)));
+  const b = Math.min(255, Math.max(0, Math.round((n & 255) * factor)));
+  return `rgb(${r},${g},${b})`;
+}
+
+/** Carro visto de trás — versão com mais detalhes visuais (sem assets externos). */
 export function drawCar(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -37,6 +45,8 @@ export function drawCar(
   const tilt = opts.tilt ?? 0;
   const bodyTop = -h * 0.8;
   const roofTop = -h;
+  const dark = shade(paint.body, 0.72);
+  const light = shade(paint.body, 1.18);
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(baseY));
@@ -51,12 +61,19 @@ export function drawCar(
   ctx.ellipse(0, -h * 0.02, half * 0.72, Math.max(1, h * 0.09), 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // rodas
+  // rodas (pneus + calota)
   const wheelW = Math.max(1, half * 0.26);
   const wheelH = h * 0.3;
   ctx.fillStyle = '#12121a';
   ctx.fillRect(-half * 0.95, -wheelH, wheelW, wheelH);
   ctx.fillRect(half * 0.95 - wheelW, -wheelH, wheelW, wheelH);
+  if (h > 14) {
+    ctx.fillStyle = '#3a3a48';
+    const hubW = Math.max(1, wheelW * 0.45);
+    const hubY = -wheelH + (wheelH - Math.max(1, h * 0.1)) / 2;
+    ctx.fillRect(-half * 0.95 + (wheelW - hubW) / 2, hubY, hubW, Math.max(1, h * 0.1));
+    ctx.fillRect(half * 0.95 - wheelW + (wheelW - hubW) / 2, hubY, hubW, Math.max(1, h * 0.1));
+  }
 
   // carroceria
   poly(
@@ -70,6 +87,26 @@ export function drawCar(
     paint.body,
   );
 
+  // highlight da carroceria (luz superior)
+  if (h > 10) {
+    poly(
+      ctx,
+      [
+        [-half * 0.8, bodyTop],
+        [half * 0.8, bodyTop],
+        [half * 0.62, bodyTop + h * 0.1],
+        [-half * 0.62, bodyTop + h * 0.1],
+      ],
+      light,
+    );
+  }
+
+  // faixa central (identidade do carro)
+  if (h > 12) {
+    ctx.fillStyle = paint.accent;
+    ctx.fillRect(-half * 0.13, bodyTop + h * 0.08, half * 0.26, h * 0.52);
+  }
+
   // teto / cabine
   poly(
     ctx,
@@ -79,7 +116,7 @@ export function drawCar(
       [half * 0.46, roofTop],
       [half * 0.62, bodyTop],
     ],
-    paint.body,
+    dark,
   );
 
   // vidro traseiro
@@ -94,24 +131,44 @@ export function drawCar(
       ],
       '#141c30',
     );
+    // reflexo no vidro
+    if (h > 18) {
+      ctx.fillStyle = 'rgba(160,210,255,0.35)';
+      ctx.fillRect(-half * 0.3, roofTop + h * 0.1, half * 0.22, Math.max(1, h * 0.05));
+    }
   }
 
-  // lanternas
+  // lanternas (com brilho quando freando)
   const lampW = Math.max(1, half * 0.24);
   const lampH = Math.max(1, h * 0.1);
   ctx.fillStyle = opts.brake ? '#ff4040' : '#c01f2e';
   ctx.fillRect(-half * 0.74, bodyTop + h * 0.16, lampW, lampH);
   ctx.fillRect(half * 0.74 - lampW, bodyTop + h * 0.16, lampW, lampH);
+  if (opts.brake && h > 10) {
+    ctx.globalAlpha = 0.35;
+    ctx.fillStyle = '#ff4040';
+    ctx.fillRect(-half * 0.74 - 1, bodyTop + h * 0.16 - 1, lampW + 2, lampH + 2);
+    ctx.fillRect(half * 0.74 - lampW - 1, bodyTop + h * 0.16 - 1, lampW + 2, lampH + 2);
+    ctx.globalAlpha = 1;
+  }
 
   if (h > 12) {
     // faixa do parachoque
     ctx.fillStyle = '#1e1e28';
     ctx.fillRect(-half * 0.88, -h * 0.16, half * 1.76, Math.max(1, h * 0.08));
 
+    // escapamentos
+    ctx.fillStyle = '#8a8a9a';
+    ctx.fillRect(-half * 0.3, -h * 0.1, Math.max(1, half * 0.12), Math.max(1, h * 0.06));
+    ctx.fillRect(half * 0.18, -h * 0.1, Math.max(1, half * 0.12), Math.max(1, h * 0.06));
+
     // aerofólio (jogador)
     if (opts.player) {
       ctx.fillStyle = paint.accent;
       ctx.fillRect(-half * 0.7, roofTop + h * 0.02, half * 1.4, Math.max(1, h * 0.06));
+      ctx.fillStyle = '#1e1e28';
+      ctx.fillRect(-half * 0.5, roofTop + h * 0.08, Math.max(1, half * 0.08), h * 0.1);
+      ctx.fillRect(half * 0.42, roofTop + h * 0.08, Math.max(1, half * 0.08), h * 0.1);
     }
   }
 
