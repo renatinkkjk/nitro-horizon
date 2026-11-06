@@ -115,6 +115,11 @@ function decorate(segments: Segment[], kinds: SpriteKind[], rng: Rng): void {
   }
 }
 
+/**
+ * Constrói o mapa top-down (minimapa) da pista.
+ * A pista é um CIRCUITO fechado, então o mapa deve ser um loop:
+ * o último ponto volta a se conectar ao primeiro.
+ */
 function buildMap(segments: Segment[]): Array<[number, number]> {
   const points: Array<[number, number]> = [[0, 0]];
   let heading = 0;
@@ -128,6 +133,10 @@ function buildMap(segments: Segment[]): Array<[number, number]> {
     y += Math.cos(heading);
     if (i % sampleEvery === 0) points.push([x, y]);
   }
+
+  // Fecha o circuito: garante que o último ponto seja o mesmo que o primeiro,
+  // então o minimapa é um loop contínuo (não uma linha aberta).
+  points.push([0, 0]);
 
   let minX = Infinity;
   let maxX = -Infinity;
