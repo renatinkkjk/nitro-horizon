@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NITRO HORIZON — Planejamento</title>
+<meta name="description" content="Planejamento de um jogo de corrida 2D pixel art inspirado em Top Gear, com 15 carros, 4 modelos e HUD completo." />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0d17;
+    --bg2:#12152a;
+    --panel:#171b33;
+    --ink:#e8ecff;
+    --muted:#8b93bd;
+    --pink:#ff3d7f;
+    --cyan:#22e0ff;
+    --yellow:#ffd23f;
+    --green:#3dff8b;
+    --orange:#ff8a3d;
+    --line:#2a3057;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 50% -10%, #1b2150 0%, transparent 55%),
+      linear-gradient(180deg,#0b0d17 0%, #0b0d17 100%);
+    color:var(--ink);
+    font-family:"VT323", ui-monospace, monospace;
+    font-size:21px;
+    line-height:1.5;
+    overflow-x:hidden;
+  }
+  /* grade de fundo estilo pista */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(rgba(34,224,255,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34,224,255,.05) 1px, transparent 1px);
+    background-size:40px 40px;
+    pointer-events:none;
+    z-index:0;
+  }
+  .wrap{position:relative; z-index:1; max-width:1040px; margin:0 auto; padding:0 20px 80px}
+
+  /* HERO */
+  header.hero{
+    position:relative;
+    text-align:center;
+    padding:70px 0 50px;
+    overflow:hidden;
+  }
+  .scan{
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.25) 0 2px, transparent 2px 4px);
+    pointer-events:none; opacity:.35;
+  }
+  .kicker{
+    font-family:"Press Start 2P", monospace;
+    font-size:10px; letter-spacing:2px; color:var(--cyan);
+    margin-bottom:22px;
+  }
+  h1{
+    font-family:"Press Start 2P", monospace;
+    font-size:clamp(28px, 7vw, 64px);
+    line-height:1.15;
+    margin:0 0 18px;
+    color:#fff;
+    text-shadow:
+      0 4px 0 #7a1039,
+      0 8px 0 #3d0820,
+      0 0 30px rgba(255,61,127,.55);
+    letter-spacing:2px;
+  }
+  h1 .accent{color:var(--pink)}
+  .subtitle{
+    max-width:640px; margin:0 auto;
+    color:var(--muted); font-size:24px;
+  }
+  .badges{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:26px}
+  .badge{
+    font-family:"Press Start 2P", monospace; font-size:9px;
+    border:2px solid var(--line); background:var(--panel);
+    padding:9px 12px; border-radius:2px; color:var(--cyan);
+    text-transform:uppercase;
+  }
+  .badge.pink{color:var(--pink); border-color:#5a1a35}
+  .badge.yellow{color:var(--yellow); border-color:#5a4a12}
+
+  .play-btn{
+    display:inline-block; margin-top:34px;
+    font-family:"Press Start 2P", monospace; font-size:13px;
+    color:#0b0d17; background:linear-gradient(180deg,var(--cyan),#0fb8d6);
+    border:3px solid #0b0d17; box-shadow:0 6px 0 #066b7d, 0 0 26px rgba(34,224,255,.45);
+    padding:16px 26px; text-decoration:none; letter-spacing:1px;
+    transition:transform .08s ease, box-shadow .08s ease;
+  }
+  .play-btn:hover{transform:translateY(2px); box-shadow:0 4px 0 #066b7d, 0 0 34px rgba(34,224,255,.7)}
+  .play-btn:active{transform:translateY(5px); box-shadow:0 1px 0 #066b7d}
+
+  /* nav */
+  nav{
+    position:sticky; top:0; z-index:20;
+    display:flex; gap:6px; flex-wrap:wrap; justify-content:center;
+    padding:12px 0; margin-bottom:30px;
+    background:rgba(11,13,23,.85);
+    backdrop-filter:blur(6px);
+    border-bottom:2px solid var(--line);
+  }
+  nav a{
+    color:var(--muted); text-decoration:none;
+    font-family:"Press Start 2P", monospace; font-size:8px;
+    padding:8px 10px; border:2px solid transparent;
+  }
+  nav a:hover{color:var(--cyan); border-color:var(--line); background:var(--panel)}
+
+  /* seções */
+  section{margin:54px 0}
+  h2{
+    font-family:"Press Start 2P", monospace;
+    font-size:clamp(14px,2.6vw,20px);
+    color:var(--yellow);
+    margin:0 0 8px;
+    letter-spacing:1px;
+    line-height:1.5;
+  }
+  .num{
+    color:var(--pink); font-size:.8em; margin-right:6px;
+  }
+  .lead{color:var(--muted); margin:0 0 22px; max-width:780px}
+  .card{
+    background:linear-gradient(180deg, var(--panel), var(--bg2));
+    border:2px solid var(--line);
+    border-radius:3px;
+    padding:22px 24px;
+    box-shadow:0 6px 0 rgba(0,0,0,.35);
+  }
+  .grid{display:grid; gap:16px}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+  .stat{
+    font-family:"Press Start 2P", monospace;
+    color:var(--cyan); font-size:18px; margin-bottom:6px;
+  }
+  .stat.small{font-size:12px; line-height:1.6}
+  .stat-label{color:var(--muted); font-size:19px}
+
+  ul.clean{margin:0; padding-left:20px}
+  ul.clean li{margin:7px 0}
+  ul.clean li::marker{color:var(--pink)}
+
+  code, .mono{font-family:ui-monospace, "Courier New", monospace; font-size:.9em; color:var(--green)}
+  pre{
+    background:#070912; border:2px solid var(--line); border-radius:3px;
+    padding:18px; overflow-x:auto; font-size:16px; line-height:1.6; color:#c9d1ff;
+  }
+  pre .c{color:#5b628c}
+  pre .k{color:var(--pink)}
+  pre .s{color:var(--green)}
+
+  table{width:100%; border-collapse:collapse; font-size:19px}
+  th,td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+  th{
+    font-family:"Press Start 2P", monospace; font-size:9px;
+    color:var(--cyan); text-transform:uppercase; letter-spacing:1px;
+    background:#0d1022;
+  }
+  tr:hover td{background:rgba(34,224,255,.04)}
+  .stars{color:var(--yellow); letter-spacing:2px; white-space:nowrap}
+  .tag{font-size:16px; color:var(--pink)}
+
+  /* HUD mockup */
+  .hud{
+    background:#05070f;
+    border:2px solid var(--line);
+    padding:16px;
+    font-family:"Press Start 2P", monospace;
+    font-size:9px;
+    color:var(--ink);
+    line-height:1.7;
+  }
+  .hud .row{display:flex; justify-content:space-between; align-items:flex-start; gap:10px}
+  .hud .box{border:2px solid #2a3057; padding:8px 10px; background:#0b0e1c; min-width:120px}
+  .hud .mini{color:var(--cyan)}
+  .hud .speed{color:var(--yellow); font-size:16px}
+  .hud .gear{color:var(--pink); font-size:14px; margin-top:8px}
+  .hud .bar{height:8px; background:#1b2040; margin-top:6px; border:1px solid #2a3057}
+  .hud .bar span{display:block; height:100%}
+  .hud .bar .fuel{width:72%; background:linear-gradient(90deg,var(--green),var(--yellow))}
+  .hud .bar .rpm{width:78%; background:linear-gradient(90deg,var(--cyan),var(--pink))}
+  .hud .dots{color:var(--yellow); letter-spacing:3px; margin-top:6px}
+  .hud .track{height:96px; border:2px dashed #2a3057; display:flex; align-items:center; justify-content:center; color:#3b4370; font-size:8px}
+
+  /* roadmap */
+  .timeline{position:relative; padding-left:26px}
+  .timeline::before{
+    content:""; position:absolute; left:6px; top:6px; bottom:6px; width:3px;
+    background:linear-gradient(180deg,var(--pink),var(--cyan));
+  }
+  .phase{position:relative; margin:0 0 18px}
+  .phase::before{
+    content:""; position:absolute; left:-26px; top:7px; width:12px; height:12px;
+    background:var(--bg); border:3px solid var(--yellow); border-radius:50%;
+  }
+  .phase .tagline{font-family:"Press Start 2P", monospace; font-size:10px; color:var(--cyan)}
+  .phase p{margin:6px 0 0; color:var(--muted)}
+
+  .pill{display:inline-block; font-size:16px; color:var(--muted); border:1px solid var(--line); padding:2px 8px; border-radius:99px; margin-right:6px}
+
+  footer{
+    text-align:center; color:var(--muted); font-size:18px;
+    border-top:2px solid var(--line); padding-top:28px; margin-top:60px;
+  }
+  .checker{
+    height:14px; margin:40px 0;
+    background-image:
+      linear-gradient(45deg,#1b2040 25%,transparent 25%,transparent 75%,#1b2040 75%),
+      linear-gradient(45deg,#1b2040 25%,transparent 25%,transparent 75%,#1b2040 75%);
+    background-size:14px 14px; background-position:0 0,7px 7px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <div class="scan"></div>
+    <div class="kicker">GAME DESIGN DOCUMENT // v1.0</div>
+    <h1>NITRO<br><span class="accent">HORIZON</span></h1>
+    <p class="subtitle">Corrida arcade 2D em pixel art inspirada em <strong>Top Gear (SNES)</strong> — câmera atrás do carro, 15 carros na pista e HUD retrô completo.</p>
+    <div class="badges">
+      <span class="badge">HTML5 Canvas</span>
+      <span class="badge pink">TypeScript</span>
+      <span class="badge yellow">320×224</span>
+      <span class="badge">1P + 14 BOTS</span>
+      <span class="badge pink">4 CARROS</span>
+    </div>
+    <a class="play-btn" href="../">▶ JOGAR AGORA</a>
+  </header>
+
+  <nav>
+    <a href="../">Jogar</a>
+    <a href="#visao">Visão</a>
+    <a href="#motor">Motor</a>
+    <a href="#carros">Carros</a>
+    <a href="#fisica">Física</a>
+    <a href="#ia">IA</a>
+    <a href="#hud">HUD</a>
+    <a href="#conteudo">Conteúdo</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#riscos">Riscos</a>
+  </nav>
+
+  <section id="visao">
+    <h2><span class="num">01</span>Visão geral</h2>
+    <p class="lead">Uma corrida completa e divertida: menu → seleção → contagem → corrida → resultado. Estilo visual de 16 bits, física arcade e 14 oponentes disputando posição.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="stat">PSEUDO-3D</div>
+        <div class="stat-label">Estrada em perspectiva por segmentos, com curvas, colinas e cenário parallax — a mesma técnica dos clássicos de corrida do SNES.</div>
+      </div>
+      <div class="card">
+        <div class="stat">15 CARROS</div>
+        <div class="stat-label">1 jogador + 14 IAs simultâneas na pista, cada uma com modelo, cor e nível de skill próprios.</div>
+      </div>
+      <div class="card">
+        <div class="stat">4 MODELOS</div>
+        <div class="stat-label">Falcão GT, Trovão V8, Vespa RS e Titã Turbo — perfis distintos de velocidade, aceleração, grip, tanque e nitro.</div>
+      </div>
+      <div class="card">
+        <div class="stat">3 PISTAS</div>
+        <div class="stat-label">Deserto ao entardecer, litoral e cidade à noite. Tudo definido em dados, fácil de expandir.</div>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:18px">⚠️ Projeto <strong>inspirado</strong> no estilo de Top Gear. Nomes, sprites, músicas e pistas são 100% originais — nenhum asset da Nintendo/Kemco é utilizado.</p>
+  </section>
+
+  <section id="motor">
+    <h2><span class="num">02</span>Motor pseudo-3D</h2>
+    <p class="lead">O coração do projeto: um renderizador <em>outrun-style</em> baseado em segmentos, com projeção 3D→2D e clipping de colinas.</p>
+    <div class="grid g2">
+      <div class="card">
+        <div class="stat small">PISTA</div>
+        <ul class="clean">
+          <li>~1.500 segmentos por volta</li>
+          <li>Cada segmento tem <code>curve</code> e <code>hill</code></li>
+          <li>Asfalto, zebrado, faixas e acostamento</li>
+          <li>Curvas empurram o carro para fora</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="stat small">RENDER</div>
+        <ul class="clean">
+          <li>Projeção com câmera, altura e <code>roadWidth</code></li>
+          <li>Desenho do fundo para a frente, com <code>maxy</code></li>
+          <li>Céu, montanhas e nuvens em parallax</li>
+          <li>Culling: ~300 segmentos visíveis</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="carros">
+    <h2><span class="num">03</span>Os 4 carros</h2>
+    <p class="lead">Quatro perfis claros para o jogador escolher — e para as 14 IAs se diferenciarem com variações de cor.</p>
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th>Modelo</th><th>Perfil</th><th>Vel. máx.</th><th>Acel.</th><th>Grip</th><th>Tanque</th><th>Consumo</th><th>Nitros</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Falcão GT</strong></td><td>Equilibrado</td><td class="stars">★★★☆</td><td class="stars">★★★</td><td class="stars">★★★</td><td class="stars">★★★</td><td class="stars">★★★</td><td>3</td></tr>
+          <tr><td><strong>Trovão V8</strong></td><td>Velocista</td><td class="stars">★★★★</td><td class="stars">★★☆</td><td class="stars">★★☆</td><td class="stars">★★★★</td><td class="stars">★★☆</td><td>2</td></tr>
+          <tr><td><strong>Vespa RS</strong></td><td>Ágil / leve</td><td class="stars">★★☆</td><td class="stars">★★★★</td><td class="stars">★★★★</td><td class="stars">★★☆</td><td class="stars">★★★★</td><td>3</td></tr>
+          <tr><td><strong>Titã Turbo</strong></td><td>Nitro / agressivo</td><td class="stars">★★★☆</td><td class="stars">★★★☆</td><td class="stars">★★☆</td><td class="stars">★★☆</td><td class="stars">★★☆</td><td>4</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="fisica">
+    <h2><span class="num">04</span>Física, marchas, nitro e gasolina</h2>
+    <div class="grid g2">
+      <div class="card">
+        <div class="stat small">CÂMBIO</div>
+        <p>6 marchas, manual (Shift/Ctrl) ou automático. RPM por velocidade/marcha; aceleração cai fora da faixa ideal. HUD exibe marcha e RPM.</p>
+      </div>
+      <div class="card">
+        <div class="stat small">NITRO</div>
+        <p>2–4 cargas por corrida. Boost de aceleração e teto por ~2,5 s, com tremor de tela e linhas de velocidade.</p>
+      </div>
+      <div class="card">
+        <div class="stat small">GASOLINA</div>
+        <p>Consumo proporcional ao RPM/nitro. Ao esgotar, entra em modo reserva. Pit stop opcional repõe tanque e pneus (~8 s de perda).</p>
+      </div>
+      <div class="card">
+        <div class="stat small">COLISÕES</div>
+        <p>Fora da pista perde velocidade e vibra. Carro×carro usa AABB em (z, x) com empurrão lateral. Bater em cenário reduz forte, sem destruir.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="ia">
+    <h2><span class="num">05</span>IA dos 14 oponentes</h2>
+    <div class="grid g3">
+      <div class="card">
+        <div class="stat small">ALVO DE VELOCIDADE</div>
+        <p>Calculado por reta/curva à frente, grip do carro e skill individual (0,92–1,03).</p>
+      </div>
+      <div class="card">
+        <div class="stat small">DESVIO</div>
+        <p>Procura faixa livre à frente e muda suavemente, evitando zigue-zague e engavetamento.</p>
+      </div>
+      <div class="card">
+        <div class="stat small">RUBBER-BAND</div>
+        <p>Suave: +4% para quem está atrás do jogador, −3% para quem está muito à frente. Sem trapaça perceptível.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="hud">
+    <h2><span class="num">06</span>HUD estilo Top Gear</h2>
+    <p class="lead">Todos os elementos pedidos, em painéis pixel com borda dupla e fonte bitmap.</p>
+    <div class="hud">
+      <div class="row">
+        <div class="box">
+          POS <span style="color:var(--yellow)">3/15</span><br>
+          VOLTA <span style="color:var(--cyan)">2/5</span>
+        </div>
+        <div class="box mini" style="flex:1;text-align:center">
+          <div class="track">[ MINIMAPA DA PISTA ]</div>
+        </div>
+        <div class="box" style="text-align:right">
+          VOLTA <span style="color:var(--cyan)">0:48.21</span><br>
+          MELHOR <span style="color:var(--green)">0:46.90</span><br>
+          TOTAL <span style="color:var(--muted)">3:12.44</span>
+        </div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <div class="box">
+          <div class="speed">187 km/h</div>
+          <div class="bar"><span class="rpm"></span></div>
+          <div class="gear">MARCHA 4</div>
+        </div>
+        <div class="box" style="text-align:right">
+          GASOLINA
+          <div class="bar"><span class="fuel"></span></div>
+          <div class="dots">NITRO ●●●○</div>
+        </div>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:14px">Extras: contagem regressiva, aviso de última volta, flash de posição e tela de resultados com tempos.</p>
+  </section>
+
+  <section id="conteudo">
+    <h2><span class="num">07</span>Conteúdo e tecnologia</h2>
+    <div class="grid g2">
+      <div class="card">
+        <div class="stat small">STACK</div>
+        <ul class="clean">
+          <li><strong>Vite + TypeScript</strong></li>
+          <li><strong>Canvas 2D</strong> puro, sem dependências de runtime</li>
+          <li>Loop de passo fixo a <strong>60 Hz</strong></li>
+          <li>Resolução interna <strong>320×224</strong>, escalada com <code>pixelated</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="stat small">CONTEÚDO</div>
+        <ul class="clean">
+          <li>3 pistas temáticas</li>
+          <li>5 voltas por corrida (configurável)</li>
+          <li>Menu, seleção de carro e pista, opções</li>
+          <li>Áudio WebAudio: motor, nitro, colisão, contagem e chiptune</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2 style="margin-top:36px;font-size:14px">Estrutura do projeto</h2>
+    <pre><span class="c">nitro-horizon/</span>
+├── index.html
+├── package.json / tsconfig.json / vite.config.ts
+├── src/
+│   ├── main.ts
+│   ├── core/        Game, Loop, Input, Audio, Rng, StateMachine
+│   ├── render/      Renderer, Pseudo3D, Sprites, Hud, Palette, Parallax
+│   ├── world/       Segment, Track, tracks/, Scenery
+│   ├── entities/    Car, PlayerCar, AiCar, CarSpecs
+│   ├── race/        RaceManager, Standings, LapTimer, Gearbox,
+│   │                FuelSystem, NitroSystem, Collision
+│   ├── ai/          AiDriver, RubberBand
+│   └── ui/          Menu, PixelFont, Results
+├── assets/          sprites + sfx
+└── tests/           gearbox, standings, fuel</pre>
+  </section>
+
+  <section id="roadmap">
+    <h2><span class="num">08</span>Roadmap</h2>
+    <p class="lead">Total estimado: <strong style="color:var(--yellow)">11–12 dias</strong> de trabalho focado. MVP jogável em ~4 dias.</p>
+    <div class="card timeline">
+      <div class="phase"><span class="tagline">M0 · 0,5 dia</span><p>Setup Vite/TS, canvas 320×224 escalado, loop fixo e input.</p></div>
+      <div class="phase"><span class="tagline">M1 · 2 dias</span><p>Motor de pista pseudo-3D: segmentos, curvas, colinas, skyline e cenário.</p></div>
+      <div class="phase"><span class="tagline">M2 · 1 dia</span><p>Carro do jogador: direção, aceleração, câmbio, RPM e off-road.</p></div>
+      <div class="phase"><span class="tagline">M3 · 2 dias</span><p>Corrida: voltas, checkpoints, ranking dos 15 carros e IA.</p></div>
+      <div class="phase"><span class="tagline">M4 · 1 dia</span><p>HUD completo com os 7 elementos.</p></div>
+      <div class="phase"><span class="tagline">M5 · 2 dias</span><p>4 carros + 14 cores de IA, 3 pistas e seleção.</p></div>
+      <div class="phase"><span class="tagline">M6 · 2 dias</span><p>Nitro, gasolina/pit, colisões, áudio, menus e resultados.</p></div>
+      <div class="phase"><span class="tagline">M7 · 1 dia</span><p>Balanceamento, performance, testes e README.</p></div>
+    </div>
+  </section>
+
+  <section id="riscos">
+    <h2><span class="num">09</span>Riscos e extensões</h2>
+    <div class="card" style="padding:0;overflow-x:auto">
+      <table>
+        <thead><tr><th>Risco</th><th>Mitigação</th></tr></thead>
+        <tbody>
+          <tr><td>Ajuste fino de curvas/colinas</td><td>Sistema de dados + hot-reload + debug overlay</td></tr>
+          <tr><td>IA injusta ou "trenzinho"</td><td>Telemetria, rubber-band limitado, variação de skill</td></tr>
+          <tr><td>Sensação de velocidade fraca</td><td>FOV, linhas de velocidade, parallax em 3 camadas, tremor</td></tr>
+          <tr><td>Performance</td><td>320×224 + sprites pré-escalados + culling → 60 fps</td></tr>
+          <tr><td>Direitos autorais</td><td>Arte, nomes e música 100% originais</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h2 style="margin-top:36px;font-size:14px">Extensões futuras</h2>
+    <p><span class="pill">Tela dividida 2P</span><span class="pill">Campeonato</span><span class="pill">Pit stop animado</span><span class="pill">Clima / noite</span><span class="pill">Editor de pista</span><span class="pill">Fantasma da melhor volta</span></p>
+  </section>
+
+  <div class="checker"></div>
+
+  <footer>
+    <p><strong style="color:var(--pink)">NITRO HORIZON</strong> — planejamento de jogo · pixel art · 2026</p>
+    <p><a href="https://github.com" style="color:var(--cyan)">Ver no GitHub</a></p>
+  </footer>
+
+</div>
+</body>
+</html>

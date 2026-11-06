@@ -1,14 +1,15 @@
 # 🏁 NITRO HORIZON
 
-**Planejamento de um jogo de corrida 2D pixel art inspirado em Top Gear (SNES).**
+**Corrida arcade pseudo-3D em pixel art**, inspirada nos clássicos de 16 bits (Top Gear / OutRun) — câmera atrás do carro, 15 carros na pista e HUD retrô completo.
 
-Jogo web em pseudo-3D com câmera atrás do carro, **15 carros simultâneos** (1 jogador + 14 oponentes controlados por IA), 4 modelos de carro e HUD completo com marcha, nitro, minimapa, velocidade, tempo de volta, posição e gasolina.
+> 🎮 **Jogar:** https://renatinkkjk.github.io/nitro-horizon/
+> 📋 **Planejamento / game design:** https://renatinkkjk.github.io/nitro-horizon/planejamento/
 
 > ⚠️ Projeto **inspirado** no estilo de Top Gear. Nomes, sprites, músicas e pistas são 100% originais — nenhum asset da Nintendo/Kemco é utilizado.
 
 ---
 
-## 📌 Visão geral
+## 📌 O que é
 
 | Item | Definição |
 |---|---|
@@ -16,170 +17,173 @@ Jogo web em pseudo-3D com câmera atrás do carro, **15 carros simultâneos** (1
 | Perspectiva | Atrás do carro, estrada em perspectiva (pseudo-3D / outrun-style) |
 | Estilo visual | Pixel art, resolução interna **320×224** (proporção SNES) |
 | Plataforma | Navegador (HTML5 Canvas) |
-| Stack | Vite + TypeScript + Canvas 2D (sem dependências de runtime) |
+| Stack | Vite + TypeScript + Canvas 2D, **zero dependências de runtime** |
 | Corrida | 15 carros simultâneos: 1 jogador + 14 IAs |
 | Carros | 4 modelos, com variações de cor para as IAs |
 | Pistas | 3 (deserto, litoral, cidade à noite) |
 
 ---
 
-## 🧱 Stack e estrutura
+## ✅ Estado atual (v0.1 — MVP jogável)
 
-```
-nitro-horizon/
-├── index.html
-├── package.json / tsconfig.json / vite.config.ts
-├── src/
-│   ├── main.ts
-│   ├── core/        Game.ts, Loop.ts, Input.ts, Audio.ts, Rng.ts, StateMachine.ts
-│   ├── render/      Renderer.ts, Pseudo3D.ts, Sprites.ts, Hud.ts, Palette.ts, Parallax.ts
-│   ├── world/       Segment.ts, Track.ts, tracks/ (3 pistas), Scenery.ts
-│   ├── entities/    Car.ts, PlayerCar.ts, AiCar.ts, CarSpecs.ts
-│   ├── race/        RaceManager.ts, Standings.ts, LapTimer.ts, Gearbox.ts,
-│   │                FuelSystem.ts, NitroSystem.ts, Collision.ts
-│   ├── ai/          AiDriver.ts, RubberBand.ts
-│   └── ui/          Menu.ts, PixelFont.ts, Results.ts
-├── assets/          sprites .png + sfx .wav (ou gerados por código)
-└── tests/           lógica pura (gearbox, standings, fuel)
-```
+Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → resultado**.
 
-**Arquitetura:** loop de passo fixo a 60 Hz com acumulador (física determinística). Estados: `MENU → CAR_SELECT → COUNTDOWN → RACING → FINISHED → RESULTS`.
+- [x] Motor pseudo-3D por segmentos com curvas e colinas
+- [x] Render 320×224 escalado com pixels nítidos (`image-rendering: pixelated`)
+- [x] Céu com gradiente, sol/lua e parallax de montanhas
+- [x] Cenário procedural por segmento (cactos, palmeiras, árvores, rochas, placas, postes, prédios, outdoors)
+- [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
+- [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
+- [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
+- [x] Gasolina com consumo por RPM/nitro e modo reserva
+- [x] 14 IAs com alvo de velocidade por curva, troca de faixa, desvio e rubber-band suave
+- [x] Colisões carro×carro (empurrão lateral + perda de velocidade)
+- [x] Voltas, melhor volta, posição e classificação em tempo real
+- [x] HUD completo: posição, volta, tempos, minimapa, velocidade, marcha, RPM, gasolina e nitro
+- [x] Contagem regressiva, pausa, tela de resultado e "última volta"
+- [x] Áudio sintetizado via WebAudio (motor por RPM, nitro, colisão, bipes)
+- [x] Deploy automático no GitHub Pages via GitHub Actions
+
+### Próximos passos (roadmap)
+
+- [ ] Pit stop animado e reabastecimento
+- [ ] Tela dividida para 2 jogadores
+- [ ] Modo campeonato (3 pistas em sequência)
+- [ ] Pickups de nitro na pista
+- [ ] Clima / variação de horário
+- [ ] Editor de pista e fantasmas de melhor volta
+- [ ] Controles por toque (mobile)
 
 ---
 
-## 🛣️ Motor pseudo-3D (o coração do projeto)
+## 🎮 Controles
 
-Técnica *outrun-style* baseada em segmentos:
+| Ação | Teclas |
+|---|---|
+| Acelerar | `↑` / `W` |
+| Frear | `↓` / `S` |
+| Virar | `←` `→` / `A` `D` |
+| Nitro | `Espaço` |
+| Subir marcha | `Shift` / `E` |
+| Descer marcha | `Ctrl` / `Q` |
+| Confirmar | `Enter` |
+| Pausar | `P` |
+| Voltar ao menu | `Esc` |
 
-- A pista é um **array de segmentos** (~1.500 por volta), cada um com `curve` e `hill` (y).
-- Projeção 3D→2D por segmento: posição da câmera, altura, `roadWidth` e perspectiva. Renderiza do fundo para a frente com clipping (`maxy`) para esconder colinas.
-- Render por segmento: asfalto, zebrado (rumble), faixas centrais, acostamento, grama/terra.
-- **Cenário parallax**: céu em gradiente pixelado, montanhas/nuvens, árvores/placas/arquibancadas posicionadas por segmento (escala conforme distância).
-- **Curvas e colinas** afetam a física: força centrífuga empurra o carro para fora, subida reduz velocidade.
-
-**Culling:** renderizar só ~300 segmentos à frente; carros fora do alcance não são desenhados.
+O câmbio começa **automático**. Trocar de marcha manualmente funciona em paralelo (o jogo aceita os dois estilos).
 
 ---
 
 ## 🚗 Os 4 carros
 
-| Modelo | Perfil | Vel. máx. | Acel. | Grip | Tanque | Consumo | Nitros |
-|---|---|---|---|---|---|---|---|
-| **Falcão GT** | Equilibrado | ★★★☆ | ★★★ | ★★★ | ★★★ | ★★★ | 3 |
-| **Trovão V8** | Velocista | ★★★★ | ★★☆ | ★★☆ | ★★★★ | ★★☆ | 2 |
-| **Vespa RS** | Ágil/leve | ★★☆ | ★★★★ | ★★★★ | ★★☆ | ★★★★ | 3 |
-| **Titã Turbo** | Nitro/agressivo | ★★★☆ | ★★★☆ | ★★☆ | ★★☆ | ★★☆ | 4 |
+| Modelo | Perfil | Nitros | Tanque | Grip |
+|---|---|---|---|---|
+| **Falcão GT** | Equilibrado | 3 | 96 | Alto |
+| **Trovão V8** | Velocista | 2 | 112 | Baixo |
+| **Vespa RS** | Ágil / leve | 3 | 74 | Máximo |
+| **Titã Turbo** | Nitro agressivo | 4 | 80 | Baixo |
 
-- As 14 IAs usam os mesmos 4 modelos com **variações de cor** (3–4 cores por modelo = 14 combinações únicas).
-- Cada IA tem um multiplicador leve de skill (0,92–1,03) para dar variedade natural ao grid.
-
----
-
-## ⚙️ Física, marchas, nitro e gasolina
-
-- **Câmbio de 6 marchas** (manual: Shift/Ctrl; opção automática). RPM calculado por velocidade/marcha; aceleração cai fora da faixa ideal. HUD mostra marcha + barra de RPM.
-- **Nitro:** limitado (2–4 cargas). Ao ativar (Espaço): boost de aceleração e teto de velocidade por ~2,5 s, com tremor de tela + linhas de velocidade. Sem recarga durante a corrida (ou pickup — decisão em aberto).
-- **Gasolina:** consumo proporcional a RPM/nitro. Ao esgotar, o carro entra em modo "reserva" (velocidade limitada). **Pit stop opcional** repõe tanque e pneus (perde ~8 s).
-- **Fora da pista:** perda de velocidade e vibração; bater em árvore/placa = forte redução (sem destruir o carro).
-- **Colisões carro×carro:** empurrão lateral + perda de velocidade, resolvido por AABB em (z, x).
+As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leves de skill (0,84–1,02), o que gera um grid variado sem parecer trapaça.
 
 ---
 
-## 🤖 IA dos 14 oponentes
+## 🗺️ As 3 pistas
 
-- Cada IA mantém `z` (distância na pista), `x` (faixa) e velocidade.
-- **Alvo de velocidade** = f(reta/curva à frente, grip do carro, skill).
-- **Desvio:** procura faixa livre à frente; muda de faixa suavemente (evita zigue-zague).
-- **Rubber-band suave:** IAs atrás do jogador ganham ~4% de velocidade; muito à frente, perdem ~3%. Limites para não parecer trapaça.
-- Grid inicial em 3 fileiras escalonadas (ou largada lançada — decisão em aberto). Ranking calculado por `volta × comprimento + z`.
+| Pista | Dificuldade | Característica | Voltas |
+|---|---|---|---|
+| **Deserto** | Fácil | Retas longas ao entardecer | 5 |
+| **Litoral** | Médio | S-curvas e colinas | 5 |
+| **Cidade** | Difícil | Curvas fechadas à noite | 4 |
+
+Cada pista é definida em dados (curva, colina, cenário, paleta) em `src/world/tracks.ts` — fácil de editar e expandir.
 
 ---
 
-## 🖥️ HUD (estilo Top Gear SNES)
+## 🛠️ Como rodar
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│ POS 3/15   VOLTA 2/5          [ MINIMAPA ]      VOLTA 0:48.21│
-│                                               MELHOR 0:46.90│
-│                                               TOTAL 3:12.44 │
-│                                                              │
-│                     (área de jogo)                           │
-│                                                              │
-│ ┌──────────────┐                              ┌────────────┐ │
-│ │ 187 km/h  ▲▲ │                              │ GASOLINA   │ │
-│ │ [███████░░]  │                              │ [██████░]  │ │
-│ │ MARCHA  4    │                              │ NITRO ●●●○ │ │
-│ └──────────────┘                              └────────────┘ │
-└──────────────────────────────────────────────────────────────┘
+Pré-requisitos: **Node.js 20+** e npm.
+
+```bash
+npm install
+npm run dev      # servidor de desenvolvimento (hot reload)
+npm run build    # type-check + build de produção em dist/
+npm run preview  # serve o build de produção localmente
 ```
 
-Elementos obrigatórios, em painéis pixel com borda dupla e fonte bitmap:
-
-1. **Marcha** + barra de RPM
-2. **Nitros** disponíveis (ícones ●●○○)
-3. **Minimapa** da pista com 15 pontos coloridos (jogador destacado)
-4. **Velocidade** (km/h, dígitos grandes)
-5. **Tempo de volta** + melhor volta + total
-6. **Posição** (3/15)
-7. **Gasolina** (barra com cor que muda: verde → amarelo → vermelho)
-
-Extras: contagem regressiva, "ÚLTIMA VOLTA", flash de posição e tela de resultados com tempos.
+O build usa `base: '/nitro-horizon/'` (ver `vite.config.ts`), necessário para o GitHub Pages de projeto.
 
 ---
 
-## 🗺️ Conteúdo
+## 🚀 Deploy
 
-- **3 pistas** (fácil / média / difícil): deserto ao entardecer, litoral, cidade à noite. Definidas em dados (curva, colina, cenário, largura) — fáceis de editar e expandir.
-- **5 voltas** por corrida (configurável), 14 oponentes.
-- **Menu:** título, seleção de carro (com stats), seleção de pista, opções (som, câmbio auto/manual).
-- **Áudio:** motor sintetizado via WebAudio (pitch por RPM), nitro, colisão, contagem, música chiptune simples.
+O deploy é automático: todo push na `main` dispara `.github/workflows/deploy.yml`, que roda o build e publica a pasta `dist/` no GitHub Pages.
 
-**Arte:** paleta limitada (~32 cores), sprites dos carros em 3–4 escalas (traseira/lateral traseira), cenário em camadas. Sprites podem ser gerados por código para não depender de assets externos.
+Para publicar manualmente:
 
----
+```bash
+npm run build
+git add .
+git commit -m "feat: ..."
+git push
+```
 
-## 🗓️ Fases de implementação
+Acompanhe em **Actions** no repositório. A URL publicada é
+`https://renatinkkjk.github.io/nitro-horizon/`.
 
-| Fase | Entrega | Tempo |
-|---|---|---|
-| **M0** | Setup Vite/TS, canvas 320×224 escalado, loop fixo, input | 0,5 dia |
-| **M1** | Motor de pista pseudo-3D: segmentos, curvas, colinas, skyline, cenário | 2 dias |
-| **M2** | Carro do jogador: direção, aceleração, câmbio, RPM, off-road | 1 dia |
-| **M3** | Corrida: voltas, checkpoints, ranking de 15 carros, IA | 2 dias |
-| **M4** | HUD completo (7 elementos) | 1 dia |
-| **M5** | 4 carros + 14 cores de IA, 3 pistas, seleção | 2 dias |
-| **M6** | Nitro, gasolina/pit, colisões carro×carro, áudio, menus, resultados | 2 dias |
-| **M7** | Balanceamento, performance, testes, README | 1 dia |
-
-**Total ≈ 11–12 dias de trabalho focado.** MVP jogável (1 pista + HUD básico) em ~4 dias.
+> A página de planejamento fica em `public/planejamento/index.html` e é copiada para `dist/planejamento/`, ficando disponível em `/planejamento/`.
 
 ---
 
-## ⚠️ Riscos e mitigação
+## 🧱 Estrutura do projeto
 
-| Risco | Mitigação |
-|---|---|
-| Ajuste fino de curvas/colinas é trabalhoso | Sistema de dados + hot-reload + debug overlay da pista |
-| IA injusta ou "trenzinho" | Telemetria, rubber-band limitado, variação de skill |
-| Sensação de velocidade fraca | FOV, linhas de velocidade no nitro, parallax em 3 camadas, tremor |
-| Performance | 320×224 + sprites pré-escalados + culling → 60 fps folgado |
-| Direitos autorais | Nomes/arte/música 100% originais, apenas inspiração mecânica |
+```
+nitro-horizon/
+├── index.html                # entrada do jogo (canvas 320×224)
+├── vite.config.ts / tsconfig.json / package.json
+├── public/
+│   └── planejamento/index.html   # página de game design (estática)
+├── src/
+│   ├── main.ts               # bootstrap, escala inteira do canvas
+│   ├── game.ts               # máquina de estados, input, loop, render do mundo
+│   ├── core/
+│   │   ├── input.ts          # teclado + estado por frame
+│   │   ├── audio.ts          # WebAudio: motor, nitro, colisão, bipes
+│   │   └── rng.ts            # PRNG determinístico (mulberry32)
+│   ├── render/
+│   │   ├── pseudo3d.ts       # projeção, segmentos, curvas, colinas, estrada
+│   │   ├── sprites.ts        # carros e cenário desenhados por código
+│   │   └── hud.ts            # HUD, minimapa, barras e formatação de tempo
+│   ├── world/
+│   │   ├── track.ts          # TrackBuilder + decoração + mapa top-down
+│   │   └── tracks.ts         # as 3 pistas e suas paletas
+│   ├── entities/
+│   │   └── carspecs.ts       # especificações dos 4 carros + cores das IAs
+│   ├── race/
+│   │   ├── gearbox.ts        # câmbio de 6 marchas, RPM e torque
+│   │   └── race.ts           # física, IA, colisões, voltas e classificação
+│   └── ui/
+│       └── screens.ts        # título, seleção, contagem, resultado, pausa
+└── .github/workflows/deploy.yml
+```
 
 ---
 
-## 🎮 Extensões futuras
+## 🛣️ Como o motor pseudo-3D funciona
 
-Tela dividida para 2 jogadores (marca do Top Gear), modo campeonato com 3 pistas, pit stop animado, clima/noite, editor de pista e fantasmas de melhor volta.
+Baseado na técnica *outrun-style* de segmentos:
+
+1. A pista é um **array de ~1.200–1.500 segmentos**, cada um com `curve` e `hill` (y).
+2. A cada frame a câmera projeta os segmentos à frente (3D → 2D) e desenha do mais distante ao mais próximo, com **clipping por `maxy`** para esconder o que está atrás das colinas.
+3. Curvas são aplicadas acumulando deslocamento horizontal (`dx`) a cada segmento; colinas vêm da interpolação de `world.y`.
+4. Cenário e carros são desenhados numa segunda passada, de trás para frente, usando a escala projetada do segmento.
+5. A física usa a curvatura do segmento atual para gerar **força centrífuga** — quanto maior a velocidade e menor o grip, mais o carro é jogado para fora.
+
+Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 
 ---
 
-## ❓ Decisões em aberto
+## ⚖️ Licença
 
-1. **Largada:** grid parado com contagem ou largada lançada?
-2. **Nitro:** número fixo por corrida ou pickups na pista?
-3. **Gasolina:** reabastecimento via pit stop ou apenas "acaba e limita a velocidade"?
-4. **2 jogadores em tela dividida:** já no MVP ou extensão?
-
----
+Distribuído sob a licença do arquivo [LICENSE](./LICENSE).
 
 <p align="center">Feito com 🕹️ e pixel art.</p>
