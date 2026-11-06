@@ -187,3 +187,5 @@ Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 Distribuído sob a licença do arquivo [LICENSE](./LICENSE).
 
 <p align="center">Feito com 🕹️ e pixel art.</p>
+
+.
