@@ -349,10 +349,11 @@ export class Game {
       if (racer === player) continue;
 
       const z = mod(racer.distance, track.length);
-      // Carros praticamente sobre a câmera (largada) seriam projetados com
-      // escala absurda e cobririam o carro do jogador.
+      // Distância relativa ao jogador na pista (circuito). Mantemos carros
+      // que estejam dentro do alcance de desenho. Não descartamos carros
+      // muito próximos (gap < 500) — isso fazia o oponente sumir ao encostar.
       const gap = mod(racer.distance - cameraZ, track.length);
-      if (gap < 500 || gap > DRAW_DISTANCE * SEGMENT_LENGTH) continue;
+      if (gap > DRAW_DISTANCE * SEGMENT_LENGTH) continue;
 
       const index = Math.floor(z / SEGMENT_LENGTH) % track.segments.length;
       const visiblePosition = visibleIndex.get(index);
@@ -360,6 +361,7 @@ export class Game {
       list.push({ visible: visiblePosition, racer, pct: (z % SEGMENT_LENGTH) / SEGMENT_LENGTH });
     }
 
+    // Desenha do mais distante para o mais próximo (painter's algorithm).
     list.sort((a, b) => b.visible - a.visible);
 
     for (const item of list) {
@@ -378,8 +380,8 @@ export class Game {
       const w = (scale * CAR_WORLD_WIDTH * WIDTH) / 2;
       const h = (scale * CAR_WORLD_HEIGHT * HEIGHT) / 2;
       if (w < 1.5 || h < 1.5) continue;
-      // Carro colado na câmera viraria um borrão gigante cobrindo a tela.
-      if (w > WIDTH * 0.42) continue;
+      // Limite máximo para não cobrir a tela inteira, mas permite carro próximo.
+      if (w > WIDTH * 0.85) continue;
       if (cx < -w || cx > WIDTH + w) continue;
 
       drawCar(ctx, cx, cy, w, h, { body: item.racer.body, accent: item.racer.accent });
@@ -429,10 +431,13 @@ export class Game {
 
   private buildHud(race: Race): HudData {
     const player = race.player;
+    const mapLength = race.track.map.length;
+    const last = Math.max(0, mapLength - 1);
 
     const dots: MinimapDot[] = race.racers.map((racer) => {
+      // Como a pista é um circuito, usamos a distância normalizada [0,1]
+      // para indexar o mapa (que agora é um loop fechado).
       const t = mod(racer.distance, race.track.length) / race.track.length;
-      const last = race.track.map.length - 1;
       const index = Math.min(last, Math.max(0, Math.floor(t * last)));
       const [x, y] = race.track.map[index];
       return { x, y, color: racer.body, isPlayer: racer.isPlayer };
