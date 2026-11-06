@@ -48,6 +48,7 @@ export class Game {
   private blinkTimer = 0;
   private paused = false;
   private braking = false;
+  private dust: Array<{ x: number; y: number; vx: number; vy: number; life: number; size: number }> = [];
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -136,6 +137,28 @@ export class Game {
 
         this.braking = input.brake;
         race.update(dt, input);
+
+        // partículas de poeira quando o jogador está fora da pista
+        if (race.phase === 'racing' && race.player.offRoad && Math.random() < 0.5) {
+          const angle = (Math.random() - 0.5) * 1.2 + Math.PI / 2;
+          const speed = Math.random() * 20 + 10;
+          this.dust.push({
+            x: 160 + race.player.steer * 8 + Math.cos(angle) * 4,
+            y: 216,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 0.35 + Math.random() * 0.25,
+            size: 1 + Math.random() * 2,
+          });
+        }
+        // atualizar e limpar partículas de poeira
+        for (let i = this.dust.length - 1; i >= 0; i -= 1) {
+          const d = this.dust[i];
+          d.x += d.vx * dt;
+          d.y += d.vy * dt;
+          d.life -= dt;
+          if (d.life <= 0) this.dust.splice(i, 1);
+        }
 
         if (race.phase === 'finished' && race.finishedAll) {
           this.state = 'results';
@@ -232,6 +255,7 @@ export class Game {
     this.renderWorld(track, camZ, camX, camY, race.racers);
     this.drawPlayerCar(race);
     this.drawSpeedFx(race);
+    this.drawDust(ctx);
     ctx.restore();
 
     drawHud(ctx, this.buildHud(race));
@@ -265,11 +289,43 @@ export class Game {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-    // sol / lua
+    // sol / lua com raios de luz
     ctx.fillStyle = theme.horizon;
     ctx.beginPath();
     ctx.arc(WIDTH * 0.72, 58, 20, 0, Math.PI * 2);
     ctx.fill();
+    if (night) {
+      // raios da lua
+      ctx.strokeStyle = 'rgba(160,180,255,0.35)';
+      ctx.lineWidth = 1;
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+        ctx.beginPath();
+        ctx.moveTo(WIDTH * 0.72 + Math.cos(a) * 22, 58 + Math.sin(a) * 22);
+        ctx.lineTo(WIDTH * 0.72 + Math.cos(a) * 34, 58 + Math.sin(a) * 34);
+        ctx.stroke();
+      }
+      // estrelas no céu noturno
+      ctx.fillStyle = '#ffffff';
+      const starSeed = Math.floor(cameraZ / 400);
+      for (let i = 0; i < 24; i += 1) {
+        const sx = ((starSeed * 37 + i * 73) % WIDTH);
+        const sy = ((starSeed * 53 + i * 91) % (HEIGHT * 0.55));
+        const bright = ((starSeed * 11 + i * 17) % 3) === 0;
+        ctx.globalAlpha = bright ? 0.9 : 0.45;
+        ctx.fillRect(sx, sy, bright ? 2 : 1, bright ? 2 : 1);
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      // raios do sol
+      ctx.strokeStyle = 'rgba(255,215,150,0.35)';
+      ctx.lineWidth = 1;
+      for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
+        ctx.beginPath();
+        ctx.moveTo(WIDTH * 0.72 + Math.cos(a) * 22, 58 + Math.sin(a) * 22);
+        ctx.lineTo(WIDTH * 0.72 + Math.cos(a) * 34, 58 + Math.sin(a) * 34);
+        ctx.stroke();
+      }
+    }
 
     // parallax
     const offset = cameraZ * 0.00035 + cameraX * 0.02;
@@ -354,6 +410,9 @@ export class Game {
       // muito próximos (gap < 500) — isso fazia o oponente sumir ao encostar.
       const gap = mod(racer.distance - cameraZ, track.length);
       if (gap > DRAW_DISTANCE * SEGMENT_LENGTH) continue;
+      // Não desenhar oponente que está colado no jogador (gap mínimo) — evita que o carro
+      // projete com escala gigantesca e pise/suma quando está muito perto da frente.
+      if (gap < 180) continue;
 
       const index = Math.floor(z / SEGMENT_LENGTH) % track.segments.length;
       const visiblePosition = visibleIndex.get(index);
@@ -384,7 +443,7 @@ export class Game {
       if (w > WIDTH * 0.85) continue;
       if (cx < -w || cx > WIDTH + w) continue;
 
-      drawCar(ctx, cx, cy, w, h, { body: item.racer.body, accent: item.racer.accent });
+      drawCar(ctx, cx, cy, w, h, { body: item.racer.body, accent: item.racer.accent }, { carNumber: item.racer.id + 1 });
     }
   }
 
@@ -426,6 +485,15 @@ export class Game {
       ctx.moveTo(cx + Math.cos(angle) * inner, cy + Math.sin(angle) * inner);
       ctx.lineTo(cx + Math.cos(angle) * (inner + length), cy + Math.sin(angle) * (inner + length));
       ctx.stroke();
+    }
+  }
+
+  private drawDust(ctx: CanvasRenderingContext2D): void {
+    if (this.dust.length === 0) return;
+    for (const d of this.dust) {
+      const alpha = d.life / 0.6;
+      ctx.fillStyle = `rgba(190,150,90,${alpha * 0.7})`;
+      ctx.fillRect(Math.round(d.x), Math.round(d.y), d.size, d.size);
     }
   }
 

@@ -10,6 +10,7 @@ export interface CarDrawOptions {
   nitro?: boolean;
   tilt?: number;
   player?: boolean;
+  carNumber?: number;
 }
 
 function poly(ctx: CanvasRenderingContext2D, points: Array<[number, number]>, color: string): void {
@@ -29,7 +30,7 @@ function shade(hex: string, factor: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-/** Carro visto de trás — versão com mais detalhes visuais (sem assets externos). */
+/** Carro visto de trás — versão com muitos detalhes visuais (sem assets externos). */
 export function drawCar(
   ctx: CanvasRenderingContext2D,
   cx: number,
@@ -47,6 +48,7 @@ export function drawCar(
   const roofTop = -h;
   const dark = shade(paint.body, 0.72);
   const light = shade(paint.body, 1.18);
+  const number = opts.carNumber ?? 0;
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(baseY));
@@ -55,27 +57,38 @@ export function drawCar(
     ctx.rotate(tilt * 0.055);
   }
 
-  // sombra
-  ctx.fillStyle = 'rgba(0,0,0,0.38)';
+  // sombra projetada no chão
+  ctx.fillStyle = 'rgba(0,0,0,0.42)';
   ctx.beginPath();
-  ctx.ellipse(0, -h * 0.02, half * 0.72, Math.max(1, h * 0.09), 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -h * 0.02, half * 0.75, Math.max(1, h * 0.1), 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // rodas (pneus + calota)
+  // rodas (pneus + calota + parafusos)
   const wheelW = Math.max(1, half * 0.26);
-  const wheelH = h * 0.3;
-  ctx.fillStyle = '#12121a';
+  const wheelH = h * 0.32;
+  ctx.fillStyle = '#101016';
   ctx.fillRect(-half * 0.95, -wheelH, wheelW, wheelH);
   ctx.fillRect(half * 0.95 - wheelW, -wheelH, wheelW, wheelH);
   if (h > 14) {
     ctx.fillStyle = '#3a3a48';
-    const hubW = Math.max(1, wheelW * 0.45);
+    const hubW = Math.max(1, wheelW * 0.5);
     const hubY = -wheelH + (wheelH - Math.max(1, h * 0.1)) / 2;
     ctx.fillRect(-half * 0.95 + (wheelW - hubW) / 2, hubY, hubW, Math.max(1, h * 0.1));
     ctx.fillRect(half * 0.95 - wheelW + (wheelW - hubW) / 2, hubY, hubW, Math.max(1, h * 0.1));
+    // parafusos da calota
+    ctx.fillStyle = '#1a1a24';
+    ctx.fillRect(-half * 0.95 + hubW * 0.18, hubY + h * 0.03, 1, 1);
+    ctx.fillRect(-half * 0.95 + hubW * 0.82, hubY + h * 0.03, 1, 1);
+    ctx.fillRect(half * 0.95 - wheelW + hubW * 0.18, hubY + h * 0.03, 1, 1);
+    ctx.fillRect(half * 0.95 - wheelW + hubW * 0.82, hubY + h * 0.03, 1, 1);
   }
 
-  // carroceria
+  // para-lamas (saltam um pouco da carroceria)
+  ctx.fillStyle = dark;
+  ctx.fillRect(-half * 0.96, -h * 0.06, half * 0.14, h * 0.06);
+  ctx.fillRect(half * 0.82, -h * 0.06, half * 0.14, h * 0.06);
+
+  // carroceria principal
   poly(
     ctx,
     [
@@ -87,7 +100,7 @@ export function drawCar(
     paint.body,
   );
 
-  // highlight da carroceria (luz superior)
+  // highlight superior (luz do céu)
   if (h > 10) {
     poly(
       ctx,
@@ -101,13 +114,23 @@ export function drawCar(
     );
   }
 
-  // faixa central (identidade do carro)
-  if (h > 12) {
-    ctx.fillStyle = paint.accent;
-    ctx.fillRect(-half * 0.13, bodyTop + h * 0.08, half * 0.26, h * 0.52);
+  // reflexo lateral esquerdo (brilho de cromo)
+  if (h > 14) {
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.fillRect(-half * 0.78, bodyTop + h * 0.06, Math.max(1, half * 0.04), h * 0.4);
   }
 
-  // teto / cabine
+  // listra de corrida central (identidade do carro)
+  if (h > 12) {
+    ctx.fillStyle = paint.accent;
+    ctx.fillRect(-half * 0.14, bodyTop + h * 0.06, half * 0.28, h * 0.5);
+    // bordo da listra (linha fina escura)
+    ctx.fillStyle = shade(paint.accent, 0.5);
+    ctx.fillRect(-half * 0.145, bodyTop + h * 0.06, 1, h * 0.5);
+    ctx.fillRect(half * 0.145 - 1, bodyTop + h * 0.06, 1, h * 0.5);
+  }
+
+  // teto / cabine (mais escuro)
   poly(
     ctx,
     [
@@ -129,69 +152,108 @@ export function drawCar(
         [half * 0.36, roofTop + h * 0.07],
         [half * 0.44, bodyTop + h * 0.02],
       ],
-      '#141c30',
+      '#0e1424',
     );
     // reflexo no vidro
     if (h > 18) {
-      ctx.fillStyle = 'rgba(160,210,255,0.35)';
-      ctx.fillRect(-half * 0.3, roofTop + h * 0.1, half * 0.22, Math.max(1, h * 0.05));
+      ctx.fillStyle = 'rgba(170,220,255,0.4)';
+      ctx.fillRect(-half * 0.32, roofTop + h * 0.08, half * 0.24, Math.max(1, h * 0.05));
     }
+    // adesivo de faixa no vidro (estilo corrida)
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillRect(-half * 0.42, roofTop + h * 0.18, half * 0.84, Math.max(1, h * 0.02));
   }
 
-  // lanternas (com brilho quando freando)
-  const lampW = Math.max(1, half * 0.24);
-  const lampH = Math.max(1, h * 0.1);
-  ctx.fillStyle = opts.brake ? '#ff4040' : '#c01f2e';
-  ctx.fillRect(-half * 0.74, bodyTop + h * 0.16, lampW, lampH);
-  ctx.fillRect(half * 0.74 - lampW, bodyTop + h * 0.16, lampW, lampH);
+  // lanternas traseiras (com brilho quando freando)
+  const lampW = Math.max(1, half * 0.26);
+  const lampH = Math.max(1, h * 0.11);
+  ctx.fillStyle = opts.brake ? '#ff5050' : '#c01f2e';
+  ctx.fillRect(-half * 0.76, bodyTop + h * 0.16, lampW, lampH);
+  ctx.fillRect(half * 0.76 - lampW, bodyTop + h * 0.16, lampW, lampH);
   if (opts.brake && h > 10) {
-    ctx.globalAlpha = 0.35;
-    ctx.fillStyle = '#ff4040';
-    ctx.fillRect(-half * 0.74 - 1, bodyTop + h * 0.16 - 1, lampW + 2, lampH + 2);
-    ctx.fillRect(half * 0.74 - lampW - 1, bodyTop + h * 0.16 - 1, lampW + 2, lampH + 2);
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#ff5050';
+    ctx.fillRect(-half * 0.76 - 1, bodyTop + h * 0.16 - 1, lampW + 2, lampH + 2);
+    ctx.fillRect(half * 0.76 - lampW - 1, bodyTop + h * 0.16 - 1, lampW + 2, lampH + 2);
     ctx.globalAlpha = 1;
+  }
+  // reflexo branco nas lanternas
+  if (h > 12) {
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillRect(-half * 0.72, bodyTop + h * 0.18, Math.max(1, lampW * 0.35), Math.max(1, lampH * 0.4));
+    ctx.fillRect(half * 0.72 - lampW * 0.35, bodyTop + h * 0.18, Math.max(1, lampW * 0.35), Math.max(1, lampH * 0.4));
   }
 
   if (h > 12) {
-    // faixa do parachoque
-    ctx.fillStyle = '#1e1e28';
-    ctx.fillRect(-half * 0.88, -h * 0.16, half * 1.76, Math.max(1, h * 0.08));
+    // faixa do para-choque inferior
+    ctx.fillStyle = '#1a1a24';
+    ctx.fillRect(-half * 0.9, -h * 0.14, half * 1.8, Math.max(1, h * 0.09));
 
-    // escapamentos
+    // placa do carro
+    ctx.fillStyle = '#2a2a36';
+    ctx.fillRect(-half * 0.22, -h * 0.11, half * 0.44, Math.max(1, h * 0.06));
+    ctx.strokeStyle = '#4a4a5a';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-half * 0.22 + 0.5, -h * 0.11 + 0.5, half * 0.44 - 1, Math.max(1, h * 0.06) - 1);
+
+    // escapamentos (duplo de cada lado)
     ctx.fillStyle = '#8a8a9a';
-    ctx.fillRect(-half * 0.3, -h * 0.1, Math.max(1, half * 0.12), Math.max(1, h * 0.06));
-    ctx.fillRect(half * 0.18, -h * 0.1, Math.max(1, half * 0.12), Math.max(1, h * 0.06));
+    ctx.fillRect(-half * 0.32, -h * 0.1, Math.max(1, half * 0.11), Math.max(1, h * 0.06));
+    ctx.fillRect(-half * 0.2, -h * 0.1, Math.max(1, half * 0.09), Math.max(1, h * 0.06));
+    ctx.fillRect(half * 0.11, -h * 0.1, Math.max(1, half * 0.11), Math.max(1, h * 0.06));
+    ctx.fillRect(half * 0.22, -h * 0.1, Math.max(1, half * 0.09), Math.max(1, h * 0.06));
+    // brilho dentro do escapamento
+    ctx.fillStyle = '#5a5a6a';
+    ctx.fillRect(-half * 0.3, -h * 0.095, Math.max(1, half * 0.07), Math.max(1, h * 0.04));
+    ctx.fillRect(half * 0.23, -h * 0.095, Math.max(1, half * 0.07), Math.max(1, h * 0.04));
 
     // aerofólio (jogador)
     if (opts.player) {
       ctx.fillStyle = paint.accent;
-      ctx.fillRect(-half * 0.7, roofTop + h * 0.02, half * 1.4, Math.max(1, h * 0.06));
-      ctx.fillStyle = '#1e1e28';
-      ctx.fillRect(-half * 0.5, roofTop + h * 0.08, Math.max(1, half * 0.08), h * 0.1);
-      ctx.fillRect(half * 0.42, roofTop + h * 0.08, Math.max(1, half * 0.08), h * 0.1);
+      ctx.fillRect(-half * 0.72, roofTop + h * 0.02, half * 1.44, Math.max(1, h * 0.06));
+      ctx.fillStyle = shade(paint.accent, 0.6);
+      ctx.fillRect(-half * 0.72, roofTop + h * 0.08, half * 1.44, Math.max(1, h * 0.02));
+      ctx.fillStyle = '#1a1a24';
+      ctx.fillRect(-half * 0.52, roofTop + h * 0.08, Math.max(1, half * 0.08), h * 0.12);
+      ctx.fillRect(half * 0.44, roofTop + h * 0.08, Math.max(1, half * 0.08), h * 0.12);
+    }
+
+    // número do carro nos lados (quando visível o suficiente)
+    if (number > 0 && h > 20) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${Math.max(6, h * 0.14)}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(number), -half * 0.42, bodyTop + h * 0.28);
+      ctx.fillText(String(number), half * 0.42, bodyTop + h * 0.28);
     }
   }
 
+  // chama do nitro
   if (opts.nitro) {
-    const flame = h * 0.34;
+    const flame = h * 0.36;
     poly(
       ctx,
       [
-        [-half * 0.3, -h * 0.02],
+        [-half * 0.34, -h * 0.02],
         [0, flame],
-        [half * 0.3, -h * 0.02],
+        [half * 0.34, -h * 0.02],
       ],
       '#ffb52e',
     );
     poly(
       ctx,
       [
-        [-half * 0.16, -h * 0.02],
+        [-half * 0.18, -h * 0.02],
         [0, flame * 0.65],
-        [half * 0.16, -h * 0.02],
+        [half * 0.18, -h * 0.02],
       ],
       '#fff4c2',
     );
+    // faíscas do nitro
+    ctx.fillStyle = '#ffe08a';
+    ctx.fillRect(-half * 0.1, -h * 0.02 - 2, 1, 2);
+    ctx.fillRect(half * 0.1 - 1, -h * 0.02 - 2, 1, 2);
   }
 
   ctx.restore();
