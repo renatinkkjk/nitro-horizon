@@ -24,7 +24,7 @@
 
 ---
 
-## ✅ Estado atual (v0.3 — pit stop e pistas com elevação)
+## ✅ Estado atual (v0.4 — menu de pausa, mobile e nitro no pit)
 
 Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → pit stop → resultado**.
 
@@ -38,8 +38,10 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
 - [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
 - [x] Gasolina com consumo por RPM/nitro e modo reserva
-- [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens e reabastecimento com limite de velocidade
+- [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens, reabastecimento com limite de velocidade e **+1 nitro por passagem**
 - [x] **Subidas e descidas** em todos os circuitos, com horizonte inclinando conforme o aclive/declive
+- [x] **Menu de pausa (ESC/P)**: continuar, reiniciar corrida, sair para o menu e espaço reservado para opções
+- [x] **Port mobile**: botões de toque para acelerar, frear, esterçar, nitro e pausa
 - [x] 14 IAs competitivas, com alvo de velocidade por curva, troca de faixa e rubber-band
 - [x] Colisões carro×carro (empurrão lateral + perda de velocidade)
 - [x] Voltas, melhor volta, posição e classificação em tempo real, com banner de "última volta"
@@ -56,7 +58,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [ ] Pickups de nitro na pista
 - [ ] Clima / variação de horário
 - [ ] Editor de pista e fantasmas de melhor volta
-- [ ] Controles por toque (mobile)
+- [ ] Tela de opções (volume, dificuldade, assistências)
 
 ---
 
@@ -71,10 +73,22 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 | Subir marcha | `Shift` / `E` |
 | Descer marcha | `Ctrl` / `Q` |
 | Confirmar | `Enter` |
-| Pausar | `P` |
-| Voltar ao menu | `Esc` |
+| Pausar / menu | `P` / `Esc` |
+| Menu de pausa | `↑` `↓` navegar · `Enter` confirmar · `Esc` voltar |
 
 O câmbio começa **automático**. Trocar de marcha manualmente funciona em paralelo (o jogo aceita os dois estilos).
+
+### 📱 Mobile
+
+Em celulares e tablets os controles de toque aparecem automaticamente abaixo do canvas (também dá para forçar com `?touch=1`):
+
+- **◀ ▶** — esterçar
+- **GÁS** / **FREIO** — acelerar e frear (câmbio automático)
+- **N₂O** — nitro
+- **II** — pausa / voltar
+- **OK** — confirmar no menu
+
+O layout se adapta a retrato e paisagem, e as opções do menu de pausa também podem ser tocadas diretamente na tela.
 
 ### ⛽ Pit stop
 
@@ -83,7 +97,8 @@ Em todas as pistas o pit lane fica **na reta principal, à direita**:
 1. As placas amarelas **PIT** avisam a entrada com antecedência.
 2. Encoste para a direita e reduza: a via de boxes tem limite de ~100 km/h.
 3. Na área de boxes (garagens), o tanque enche em cerca de 2,2 s.
-4. O HUD mostra `PIT LANE` / `PIT STOP` e a porcentagem; o minimapa marca a entrada com um **P**.
+4. Cada passagem pelos boxes também recarrega **+1 nitro** (até o máximo do carro).
+5. O HUD mostra `PIT LANE` / `PIT STOP` e a porcentagem; o minimapa marca a entrada com um **P**.
 
 O aviso `COMBUSTÍVEL BAIXO` aparece quando o tanque cai abaixo de 20%. Se o combustível zerar, o carro entra em modo reserva — ainda dá para chegar ao pit.
 
@@ -195,6 +210,7 @@ Baseado na técnica *outrun-style* de segmentos:
 6. O minimapa reaproveita o mapa top-down da pista (curvas integradas e fechadas em 360°) e usa a mesma transformação para o traçado, a linha de largada, o marcador do pit e os pontos dos carros.
 7. O pit lane é desenhado por segmento, com afunilamento na entrada/saída, separador tracejado e muro. Na física, a faixa direita da reta principal vira área de boxes: limite de velocidade e reabastecimento.
 8. As subidas/descidas vêm de `world.y` e a câmera acompanha o solo. Para reforçar a leitura, o horizonte (sol, montanhas e parallax) inclina conforme a inclinação da pista.
+9. O loop principal é protegido contra exceções: um erro em um frame não mata o `requestAnimationFrame` e, se persistir, o jogo volta ao título em vez de travar. As janelas dos prédios usam grade limitada para manter o custo de desenho baixo quando um prédio passa colado na câmera.
 
 Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 

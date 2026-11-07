@@ -343,7 +343,15 @@
       </div>
       <div class="card">
         <div class="stat small">PIT STOP</div>
-        <p>Via de boxes sinalizada na reta principal, com placas PIT, muro e garagens. Encoste à direita e reduza: o reabastecimento acontece na área de boxes.</p>
+        <p>Via de boxes sinalizada na reta principal, com placas PIT, muro e garagens. Encoste à direita e reduza: o reabastecimento acontece na área de boxes e cada passagem recarrega +1 nitro.</p>
+      </div>
+      <div class="card">
+        <div class="stat small">PAUSA / MENU</div>
+        <p><strong>ESC</strong> ou <strong>P</strong> abre o menu no meio da corrida: continuar, reiniciar, sair para o menu e um espaço reservado para opções futuras.</p>
+      </div>
+      <div class="card">
+        <div class="stat small">MOBILE</div>
+        <p>Port de toque com botões de acelerar, frear, esterçar, nitro e pausa. Os controles ficam abaixo do canvas e o layout se adapta a retrato e paisagem.</p>
       </div>
       <div class="card">
         <div class="stat small">COLISÕES</div>
@@ -456,7 +464,7 @@
       <div class="phase"><span class="tagline">M4 · 1 dia</span><p>HUD completo com os 7 elementos.</p></div>
       <div class="phase"><span class="tagline">M5 · 2 dias</span><p>4 carros + 14 cores de IA, 3 pistas e seleção.</p></div>
       <div class="phase"><span class="tagline">M6 · 2 dias</span><p>Nitro, gasolina/pit, colisões, áudio, menus e resultados.</p></div>
-      <div class="phase"><span class="tagline">M7 · 1 dia</span><p>Balanceamento, performance, testes e README.</p></div>
+      <div class="phase"><span class="tagline">M7 · 1 dia</span><p>Balanceamento, performance, menu de pausa, port mobile, testes e README.</p></div>
     </div>
   </section>
 
@@ -470,12 +478,13 @@
           <tr><td>IA injusta ou "trenzinho"</td><td>Telemetria, rubber-band limitado, variação de skill</td></tr>
           <tr><td>Sensação de velocidade fraca</td><td>FOV, linhas de velocidade, parallax em 3 camadas, tremor</td></tr>
           <tr><td>Performance</td><td>320×224 + sprites pré-escalados + culling → 60 fps</td></tr>
+          <tr><td>Travamento na Cidade</td><td>Grade de janelas dos prédios limitada + loop protegido contra exceções</td></tr>
           <tr><td>Direitos autorais</td><td>Arte, nomes e música 100% originais</td></tr>
         </tbody>
       </table>
     </div>
     <h2 style="margin-top:36px;font-size:14px">Extensões futuras</h2>
-    <p><span class="pill">Tela dividida 2P</span><span class="pill">Campeonato</span><span class="pill">Equipe de pit animada</span><span class="pill">Clima / noite</span><span class="pill">Editor de pista</span><span class="pill">Fantasma da melhor volta</span></p>
+    <p><span class="pill">Tela dividida 2P</span><span class="pill">Campeonato</span><span class="pill">Equipe de pit animada</span><span class="pill">Tela de opções</span><span class="pill">Clima / noite</span><span class="pill">Editor de pista</span><span class="pill">Fantasma da melhor volta</span></p>
   </section>
 
   <div class="checker"></div>
