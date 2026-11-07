@@ -16,6 +16,7 @@ import {
 } from './render/pseudo3d';
 import { drawCar, drawScenery, spriteWorldSize } from './render/sprites';
 import {
+  PAUSE_OPTIONS,
   drawCarSelectScreen,
   drawCountdown,
   drawPauseScreen,
@@ -57,6 +58,7 @@ export class Game {
   private fuelWarned = false;
   private wasRefueling = false;
   private pitch = 0;
+  private pauseIndex = 0;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -82,8 +84,14 @@ export class Game {
       }
 
       const input = this.input.poll();
-      this.update(dt, input);
-      this.render();
+      // Um erro num frame não pode matar o loop de requestAnimationFrame:
+      // sem isso, qualquer exceção congela o jogo para sempre.
+      try {
+        this.update(dt, input);
+        this.render();
+      } catch (error) {
+        console.error('[Nitro Horizon] Falha no frame:', error);
+      }
 
       requestAnimationFrame(frame);
     };
@@ -128,18 +136,31 @@ export class Game {
         const race = this.race;
         if (!race) break;
 
-        if (input.pausePressed) {
-          this.paused = !this.paused;
-          if (this.paused) this.audio.silenceEngine();
+        // Menu de pausa (ESC / P)
+        if (this.paused) {
+          if (input.backPressed || input.pausePressed) {
+            this.paused = false;
+            this.audio.beep(520, 0.05, 'square', 0.08);
+            break;
+          }
+          if (input.upPressed) {
+            this.pauseIndex =
+              (this.pauseIndex + PAUSE_OPTIONS.length - 1) % PAUSE_OPTIONS.length;
+            this.audio.beep(480, 0.04, 'square', 0.06);
+          }
+          if (input.downPressed) {
+            this.pauseIndex = (this.pauseIndex + 1) % PAUSE_OPTIONS.length;
+            this.audio.beep(480, 0.04, 'square', 0.06);
+          }
+          if (input.confirmPressed) this.choosePauseOption();
+          break;
         }
 
-        if (this.paused) {
-          if (input.backPressed) {
-            this.paused = false;
-            this.race = null;
-            this.audio.silenceEngine();
-            this.state = 'title';
-          }
+        if (input.pausePressed || input.backPressed) {
+          this.paused = true;
+          this.pauseIndex = 0;
+          this.audio.silenceEngine();
+          this.audio.beep(520, 0.05, 'square', 0.08);
           break;
         }
 
@@ -212,6 +233,32 @@ export class Game {
   private changeTrack(direction: number): void {
     this.trackIndex = (this.trackIndex + direction + TRACKS.length) % TRACKS.length;
     this.audio.beep(520, 0.05, 'square', 0.08);
+  }
+
+  private choosePauseOption(): void {
+    switch (this.pauseIndex) {
+      case 0:
+        this.paused = false;
+        this.audio.beep(620, 0.05, 'square', 0.08);
+        break;
+
+      case 1:
+        this.startRace();
+        break;
+
+      case 2:
+        this.paused = false;
+        this.race = null;
+        this.audio.silenceEngine();
+        this.audio.beep(440, 0.08);
+        this.state = 'title';
+        break;
+
+      default:
+        // Opções ainda desabilitadas (reservado para futuras configurações).
+        this.audio.beep(220, 0.08, 'square', 0.06);
+        break;
+    }
   }
 
   private startRace(): void {
@@ -295,7 +342,7 @@ export class Game {
     }
 
     if (race.phase === 'countdown') drawCountdown(ctx, race.countdown);
-    if (this.paused) drawPauseScreen(ctx);
+    if (this.paused) drawPauseScreen(ctx, this.pauseIndex, PAUSE_OPTIONS);
   }
 
   private groundAt(track: Track, distance: number): number {

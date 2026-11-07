@@ -225,9 +225,48 @@ export function drawResultsScreen(ctx: CanvasRenderingContext2D, race: Race, bli
   if (blink) text(ctx, 'ENTER PARA VOLTAR AO MENU', 160, 214, 7, '#e8ecff', 'center');
 }
 
-export function drawPauseScreen(ctx: CanvasRenderingContext2D): void {
-  ctx.fillStyle = 'rgba(5,6,12,0.72)';
+export interface PauseOption {
+  label: string;
+  enabled: boolean;
+}
+
+/** Opções do menu de pausa (ESC). Novas opções entram aqui. */
+export const PAUSE_OPTIONS: PauseOption[] = [
+  { label: 'CONTINUAR', enabled: true },
+  { label: 'REINICIAR CORRIDA', enabled: true },
+  { label: 'SAIR PARA O MENU', enabled: true },
+  { label: 'OPÇÕES (EM BREVE)', enabled: false },
+];
+
+export function drawPauseScreen(
+  ctx: CanvasRenderingContext2D,
+  index: number,
+  options: PauseOption[] = PAUSE_OPTIONS,
+): void {
+  ctx.fillStyle = 'rgba(5,6,12,0.74)';
   ctx.fillRect(0, 0, 320, 224);
-  title(ctx, 'PAUSA', 100, 24, '#22e0ff');
-  text(ctx, 'P PARA CONTINUAR · ESC PARA O MENU', 160, 126, 7, '#8b93bd', 'center', false);
+
+  panel(ctx, 58, 40, 204, 146, 0.9);
+  title(ctx, 'PAUSA', 68, 20, '#22e0ff');
+
+  options.forEach((option, i) => {
+    const y = 92 + i * 20;
+    const selected = i === index;
+    if (selected) {
+      ctx.fillStyle = option.enabled ? 'rgba(34,224,255,0.16)' : 'rgba(74,84,128,0.18)';
+      ctx.fillRect(66, y - 11, 188, 16);
+      text(ctx, '▶', 74, y, 8, option.enabled ? '#22e0ff' : '#4a5480');
+    }
+    text(
+      ctx,
+      option.label,
+      160,
+      y,
+      8,
+      !option.enabled ? '#4a5480' : selected ? '#ffffff' : '#b8c2e8',
+      'center',
+    );
+  });
+
+  text(ctx, '↑ ↓ NAVEGAR · ENTER CONFIRMAR · ESC VOLTAR', 160, 180, 6, '#4a5480', 'center', false);
 }
