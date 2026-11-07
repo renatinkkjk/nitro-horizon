@@ -429,8 +429,10 @@ export function drawScenery(
       ctx.fillStyle = night ? '#0f1220' : '#5a6070';
       ctx.fillRect(-w * 0.5, -h, Math.max(1, w), h);
       ctx.fillStyle = night ? '#ffd76a' : '#2a3040';
-      const cols = Math.max(2, Math.floor(w / 12));
-      const rows = Math.max(3, Math.floor(h / 16));
+      // Limita a grade de janelas: um prédio muito próximo da câmera pode
+      // ocupar milhares de pixels e travar o frame com milhares de fillRect.
+      const cols = Math.min(14, Math.max(2, Math.floor(w / 12)));
+      const rows = Math.min(20, Math.max(3, Math.floor(h / 16)));
       for (let c = 0; c < cols; c += 1) {
         for (let r = 0; r < rows; r += 1) {
           if ((c + r * 3) % 4 === 0) continue;
