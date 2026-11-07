@@ -8,6 +8,7 @@ import {
   DRAW_DISTANCE,
   ROAD_WIDTH,
   SEGMENT_LENGTH,
+  clamp,
   lerp,
   mod,
   renderRoad,
@@ -53,6 +54,9 @@ export class Game {
   private bannerSub = '';
   private bannerTimer = 0;
   private lastLaps = 0;
+  private fuelWarned = false;
+  private wasRefueling = false;
+  private pitch = 0;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -160,6 +164,29 @@ export class Game {
           }
         }
 
+        // aviso de combustível e feedback do pit stop
+        const fuelFrac = player.fuel / player.spec.fuelCapacity;
+        if (!this.fuelWarned && fuelFrac < 0.2 && race.track.pit) {
+          this.fuelWarned = true;
+          this.bannerText = 'COMBUSTÍVEL BAIXO';
+          this.bannerSub = 'PIT STOP NA RETA PRINCIPAL';
+          this.bannerTimer = 2.8;
+          this.audio.beep(660, 0.14, 'square', 0.12);
+        }
+        if (fuelFrac > 0.45) this.fuelWarned = false;
+
+        if (player.refueling && !this.wasRefueling) {
+          this.bannerText = 'PIT STOP';
+          this.bannerSub = 'REABASTECENDO';
+          this.bannerTimer = 1.4;
+        }
+        if (!player.refueling && this.wasRefueling && fuelFrac > 0.9) {
+          this.bannerText = 'TANQUE CHEIO';
+          this.bannerSub = 'PODE ACELERAR';
+          this.bannerTimer = 1.6;
+        }
+        this.wasRefueling = player.refueling;
+
         if (race.phase === 'finished' && race.finishedAll) {
           this.state = 'results';
         }
@@ -194,6 +221,8 @@ export class Game {
     this.paused = false;
     this.bannerTimer = 0;
     this.lastLaps = 0;
+    this.fuelWarned = false;
+    this.wasRefueling = false;
     this.state = 'race';
   }
 
@@ -287,13 +316,19 @@ export class Game {
     const theme = track.theme;
     const night = track.id === 'cidade';
 
+    // Inclinação do horizonte conforme o aclive/declive da pista.
+    const ahead = this.groundAt(track, cameraZ + 1400);
+    const behind = this.groundAt(track, cameraZ - 1400);
+    const slope = (ahead - behind) / 2800;
+    this.pitch = clamp(slope * 900, -17, 17);
+
     // céu, sol/lua, estrelas e nuvens
-    this.drawSky(theme, night, cameraZ, cameraX);
+    this.drawSky(theme, night, cameraZ, cameraX, this.pitch);
 
     // parallax
     const offset = cameraZ * 0.00035 + cameraX * 0.02;
-    this.drawMountains(112, 42, theme.parallaxFar, offset, 150);
-    this.drawMountains(116, 26, theme.parallaxNear, offset * 1.8, 92);
+    this.drawMountains(112 + this.pitch, 42, theme.parallaxFar, offset, 150);
+    this.drawMountains(116 + this.pitch * 0.8, 26, theme.parallaxNear, offset * 1.8, 92);
 
     // estrada
     const visible = renderRoad(
@@ -317,6 +352,7 @@ export class Game {
     night: boolean,
     cameraZ: number,
     cameraX: number,
+    pitch: number,
   ): void {
     const ctx = this.ctx;
     const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT * 0.62);
@@ -326,7 +362,7 @@ export class Game {
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
     const cx = WIDTH * 0.72;
-    const cy = night ? 54 : 58;
+    const cy = (night ? 54 : 58) + pitch;
 
     // halo do sol / lua
     const halo = ctx.createRadialGradient(cx, cy, 2, cx, cy, night ? 46 : 56);
@@ -339,7 +375,7 @@ export class Game {
       // estrelas com cintilância e leve parallax
       for (let i = 0; i < 54; i += 1) {
         const px = mod(i * 73 + cameraX * 0.004, WIDTH);
-        const py = 4 + ((i * 37) % 96);
+        const py = clamp(4 + ((i * 37) % 96) + pitch * 0.6, 2, 104);
         const twinkle = 0.35 + 0.65 * Math.abs(Math.sin(i * 1.7 + this.time * 1.4));
         ctx.globalAlpha = twinkle * 0.85;
         ctx.fillStyle = i % 9 === 0 ? '#ffd8a8' : '#dfe8ff';
@@ -372,7 +408,7 @@ export class Game {
       const drift = mod(cameraZ * 0.0008 + this.time * 1.4, 420);
       for (let i = 0; i < 3; i += 1) {
         const cloudX = mod(i * 140 + 340 - drift, 480) - 80;
-        const cloudY = 34 + i * 17;
+        const cloudY = 34 + i * 17 + pitch * 0.5;
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
@@ -399,8 +435,8 @@ export class Game {
       ctx.lineTo(x + period, baseY);
     }
     ctx.lineTo(WIDTH, baseY);
-    ctx.lineTo(WIDTH, baseY + 6);
-    ctx.lineTo(0, baseY + 6);
+    ctx.lineTo(WIDTH, baseY + 46);
+    ctx.lineTo(0, baseY + 46);
     ctx.closePath();
     ctx.fill();
   }
@@ -530,14 +566,23 @@ export class Game {
 
   private buildHud(race: Race): HudData {
     const player = race.player;
+    const map = race.track.map;
 
     const dots: MinimapDot[] = race.racers.map((racer) => {
       const t = mod(racer.distance, race.track.length) / race.track.length;
-      const last = race.track.map.length - 1;
+      const last = map.length - 1;
       const index = Math.min(last, Math.max(0, Math.floor(t * last)));
-      const [x, y] = race.track.map[index];
+      const [x, y] = map[index];
       return { x, y, color: racer.body, isPlayer: racer.isPlayer };
     });
+
+    let pit: { x: number; y: number } | null = null;
+    if (race.track.pit) {
+      const t = mod(race.track.pit.entry, race.track.length) / race.track.length;
+      const last = map.length - 1;
+      const index = Math.min(last, Math.max(0, Math.round(t * last)));
+      pit = { x: map[index][0], y: map[index][1] };
+    }
 
     return {
       speedKmh: player.speed * 0.025,
@@ -553,8 +598,11 @@ export class Game {
       lapTime: race.phase === 'racing' ? race.time - player.lapStart : 0,
       bestLap: player.bestLap,
       totalTime: race.time,
-      map: race.track.map,
+      map,
       dots,
+      pit,
+      inPit: player.inPit,
+      refueling: player.refueling,
       lastLap: player.lapsDone === race.track.laps - 1 && this.bannerTimer <= 0,
       message: '',
       messageTimer: 0,

@@ -40,7 +40,9 @@ export type SpriteKind =
   | 'lamp'
   | 'building'
   | 'stand'
-  | 'bush';
+  | 'bush'
+  | 'pitsign'
+  | 'pitbox';
 
 export interface RoadSprite {
   kind: SpriteKind;
@@ -59,6 +61,8 @@ export interface Segment {
   looped: boolean;
   fog: number;
   clip: number;
+  /** 0 = sem pit lane; 0..1 = largura da via de boxes (com afunilamento). */
+  pitLane: number;
 }
 
 export interface ColorSet {
@@ -70,6 +74,7 @@ export interface ColorSet {
   rumbleAlt: string;
   lane: string;
   fog: string;
+  pit: string;
 }
 
 export function lerp(a: number, b: number, t: number): number {
@@ -112,6 +117,7 @@ export function makeSegment(index: number, y1: number, y2: number, curve: number
     looped: false,
     fog: 1,
     clip: 0,
+    pitLane: 0,
   };
 }
 
@@ -218,6 +224,69 @@ function renderSegment(
 
   ctx.fillStyle = grass;
   ctx.fillRect(0, p2.y, width, p1.y - p2.y);
+
+  // pit lane: faixa de boxes à direita, com afunilamento na entrada e na saída
+  if (segment.pitLane > 0.001) {
+    const taper = segment.pitLane;
+    const inner = 1.03;
+    const outer = inner + 0.52 * taper;
+    const p1i = p1.x + p1.w * inner;
+    const p1o = p1.x + p1.w * outer;
+    const p2i = p2.x + p2.w * inner;
+    const p2o = p2.x + p2.w * outer;
+
+    polygon(ctx, p1i, p1.y, p1o, p1.y, p2o, p2.y, p2i, p2.y, colors.pit);
+
+    // separador tracejado entre a pista e a via de boxes
+    if (segment.dark) {
+      const dashIn = inner + 0.012;
+      const dashOut = inner + 0.055;
+      polygon(
+        ctx,
+        p1.x + p1.w * dashIn,
+        p1.y,
+        p1.x + p1.w * dashOut,
+        p1.y,
+        p2.x + p2.w * dashOut,
+        p2.y,
+        p2.x + p2.w * dashIn,
+        p2.y,
+        '#eef3f7',
+      );
+    }
+
+    // muro de proteção na borda externa (sem fechar a entrada/saída)
+    if (taper > 0.99) {
+      const wallIn = outer + 0.005;
+      const wallOut = outer + 0.055;
+      polygon(
+        ctx,
+        p1.x + p1.w * wallIn,
+        p1.y,
+        p1.x + p1.w * wallOut,
+        p1.y,
+        p2.x + p2.w * wallOut,
+        p2.y,
+        p2.x + p2.w * wallIn,
+        p2.y,
+        '#1c1c2c',
+      );
+      const topIn = wallIn + 0.008;
+      const topOut = wallOut - 0.008;
+      polygon(
+        ctx,
+        p1.x + p1.w * topIn,
+        p1.y,
+        p1.x + p1.w * topOut,
+        p1.y,
+        p2.x + p2.w * topOut,
+        p2.y,
+        p2.x + p2.w * topIn,
+        p2.y,
+        '#4a5480',
+      );
+    }
+  }
 
   const r1 = Math.max(1, p1.w * 0.12);
   const r2 = Math.max(1, p2.w * 0.12);

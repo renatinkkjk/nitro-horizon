@@ -43,6 +43,12 @@ export interface Racer {
   offRoad: boolean;
   steer: number;
   bump: number;
+
+  /** Está na via de boxes (reta principal). */
+  inPit: boolean;
+  /** Está na área de boxes e o tanque está enchendo. */
+  refueling: boolean;
+  pitStops: number;
 }
 
 export type RacePhase = 'countdown' | 'racing' | 'finished';
@@ -116,6 +122,10 @@ export class Race {
         offRoad: false,
         steer: 0,
         bump: 0,
+
+        inPit: false,
+        refueling: false,
+        pitStops: 0,
       };
 
       this.racers.push(racer);
@@ -223,7 +233,36 @@ export class Race {
     if (p.speed > top) p.speed = Math.max(top, p.speed - spec.maxSpeed * 1.25 * dt);
     if (p.speed < 0) p.speed = 0;
 
-    p.offRoad = Math.abs(p.offset) > 1.02;
+    // Pit lane: limite de velocidade e reabastecimento na área de boxes.
+    const wasRefueling = p.refueling;
+    p.inPit = false;
+    p.refueling = false;
+    const pit = this.track.pit;
+    if (pit) {
+      const z = mod(p.distance, this.track.length);
+      if (z >= pit.entry && z <= pit.exit && p.offset > 1.02) {
+        p.inPit = true;
+
+        const pitLimit = spec.maxSpeed * 0.32;
+        if (p.speed > pitLimit) {
+          p.speed = Math.max(pitLimit, p.speed - spec.maxSpeed * 1.4 * dt);
+        }
+
+        if (z >= pit.boxStart && z <= pit.boxEnd && p.fuel < spec.fuelCapacity) {
+          const before = p.fuel;
+          p.fuel = Math.min(spec.fuelCapacity, p.fuel + (spec.fuelCapacity / 2.2) * dt);
+          p.refueling = p.fuel > before + 0.0001;
+          if (p.refueling && !wasRefueling) {
+            p.pitStops += 1;
+            this.audio.beep(720, 0.12, 'square', 0.09);
+          }
+        }
+
+        if (p.offset > 1.56) p.offset = 1.56;
+      }
+    }
+
+    p.offRoad = Math.abs(p.offset) > 1.02 && !p.inPit;
     if (p.offRoad) {
       const limit = spec.maxSpeed * 0.34;
       if (p.speed > limit) p.speed = Math.max(limit, p.speed - spec.maxSpeed * 1.15 * dt);

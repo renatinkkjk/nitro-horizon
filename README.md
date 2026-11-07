@@ -24,9 +24,9 @@
 
 ---
 
-## ✅ Estado atual (v0.2 — circuitos fechados e visual refinado)
+## ✅ Estado atual (v0.3 — pit stop e pistas com elevação)
 
-Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → resultado**.
+Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → pit stop → resultado**.
 
 - [x] Motor pseudo-3D por segmentos com curvas e colinas
 - [x] Render 320×224 escalado com pixels nítidos (`image-rendering: pixelated`)
@@ -38,17 +38,19 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
 - [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
 - [x] Gasolina com consumo por RPM/nitro e modo reserva
+- [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens e reabastecimento com limite de velocidade
+- [x] **Subidas e descidas** em todos os circuitos, com horizonte inclinando conforme o aclive/declive
 - [x] 14 IAs competitivas, com alvo de velocidade por curva, troca de faixa e rubber-band
 - [x] Colisões carro×carro (empurrão lateral + perda de velocidade)
 - [x] Voltas, melhor volta, posição e classificação em tempo real, com banner de "última volta"
-- [x] HUD completo: posição, volta, tempos, minimapa, velocidade, marcha, RPM, gasolina e nitro
+- [x] HUD completo: posição, volta, tempos, minimapa, velocidade, marcha, RPM, gasolina, nitro e status do pit
 - [x] Contagem regressiva, pausa, tela de resultado e "última volta"
 - [x] Áudio sintetizado via WebAudio (motor por RPM, nitro, colisão, bipes)
 - [x] Deploy automático no GitHub Pages via GitHub Actions
 
 ### Próximos passos (roadmap)
 
-- [ ] Pit stop animado e reabastecimento
+- [ ] Equipe de pit animada (mecânicos e macaco)
 - [ ] Tela dividida para 2 jogadores
 - [ ] Modo campeonato (3 pistas em sequência)
 - [ ] Pickups de nitro na pista
@@ -74,6 +76,17 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 
 O câmbio começa **automático**. Trocar de marcha manualmente funciona em paralelo (o jogo aceita os dois estilos).
 
+### ⛽ Pit stop
+
+Em todas as pistas o pit lane fica **na reta principal, à direita**:
+
+1. As placas amarelas **PIT** avisam a entrada com antecedência.
+2. Encoste para a direita e reduza: a via de boxes tem limite de ~100 km/h.
+3. Na área de boxes (garagens), o tanque enche em cerca de 2,2 s.
+4. O HUD mostra `PIT LANE` / `PIT STOP` e a porcentagem; o minimapa marca a entrada com um **P**.
+
+O aviso `COMBUSTÍVEL BAIXO` aparece quando o tanque cai abaixo de 20%. Se o combustível zerar, o carro entra em modo reserva — ainda dá para chegar ao pit.
+
 ---
 
 ## 🚗 Os 4 carros
@@ -93,11 +106,11 @@ As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leve
 
 | Pista | Dificuldade | Característica | Voltas |
 |---|---|---|---|
-| **Deserto** | Fácil | Circuito rápido de retas longas ao entardecer | 5 |
-| **Litoral** | Médio | Circuito de S-curvas e colinas com vista para o mar | 5 |
-| **Cidade** | Difícil | Circuito noturno de curvas fechadas entre prédios | 4 |
+| **Deserto** | Fácil | Retas longas, subida do canyon e descida para a chegada | 5 |
+| **Litoral** | Médio | S-curvas e colinas com vista para o mar | 5 |
+| **Cidade** | Difícil | Curvas fechadas e elevados entre prédios à noite | 4 |
 
-Cada pista é definida em dados (curva, colina, cenário, paleta) em `src/world/tracks.ts` — fácil de editar e expandir. O minimapa é gerado a partir das próprias curvas: a soma de curvatura de cada volta é normalizada para 360° e o traçado é fechado, garantindo um circuito de verdade.
+Cada pista é definida em dados (curva, colina, cenário, paleta) em `src/world/tracks.ts` — fácil de editar e expandir. O minimapa é gerado a partir das próprias curvas: a soma de curvatura de cada volta é normalizada para 360° e o traçado é fechado, garantindo um circuito de verdade. As três pistas têm pit lane na reta principal e trechos de subida/descida; a elevação é nivelada para o fim da volta encontrar o início sem degrau.
 
 ---
 
@@ -179,7 +192,9 @@ Baseado na técnica *outrun-style* de segmentos:
 3. Curvas são aplicadas acumulando deslocamento horizontal (`dx`) a cada segmento; colinas vêm da interpolação de `world.y`.
 4. Cenário e carros são desenhados numa segunda passada, de trás para frente, usando a escala projetada do segmento. Carros muito próximos têm o tamanho limitado em vez de sumir, para nunca "piscar" antes da colisão.
 5. A física usa a curvatura do segmento atual para gerar **força centrífuga** — quanto maior a velocidade e menor o grip, mais o carro é jogado para fora.
-6. O minimapa reaproveita o mapa top-down da pista (curvas integradas e fechadas em 360°) e usa a mesma transformação para o traçado, a linha de largada e os pontos dos carros.
+6. O minimapa reaproveita o mapa top-down da pista (curvas integradas e fechadas em 360°) e usa a mesma transformação para o traçado, a linha de largada, o marcador do pit e os pontos dos carros.
+7. O pit lane é desenhado por segmento, com afunilamento na entrada/saída, separador tracejado e muro. Na física, a faixa direita da reta principal vira área de boxes: limite de velocidade e reabastecimento.
+8. As subidas/descidas vêm de `world.y` e a câmera acompanha o solo. Para reforçar a leitura, o horizonte (sol, montanhas e parallax) inclina conforme a inclinação da pista.
 
 Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 

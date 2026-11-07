@@ -29,6 +29,9 @@ export interface HudData {
   totalTime: number;
   map: Array<[number, number]>;
   dots: MinimapDot[];
+  pit: { x: number; y: number } | null;
+  inPit: boolean;
+  refueling: boolean;
   lastLap: boolean;
   message: string;
   messageTimer: number;
@@ -134,6 +137,7 @@ function drawMinimap(
   h: number,
   map: Array<[number, number]>,
   dots: MinimapDot[],
+  pit: { x: number; y: number } | null,
 ): void {
   panel(ctx, x, y, w, h);
 
@@ -174,6 +178,18 @@ function drawMinimap(
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(sx - 1, sy - 1, 2, 2);
     ctx.fillRect(sx + 1, sy + 1, 1, 1);
+
+    // marca do pit lane
+    if (pit) {
+      const px = Math.round(ox + pit.x * scale);
+      const py = Math.round(oy + pit.y * scale);
+      ctx.fillStyle = '#0a0c16';
+      ctx.fillRect(px - 3, py - 3, 7, 7);
+      ctx.strokeStyle = '#22e0ff';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(px - 2.5, py - 2.5, 6, 6);
+      text(ctx, 'P', px + 0.5, py + 2, 6, '#22e0ff', 'center');
+    }
   }
 
   for (const dot of dots) {
@@ -211,8 +227,33 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
   text(ctx, `TOTAL ${formatTime(data.totalTime)}`, 6, 27, 7, '#8b93bd');
 
   // minimapa
-  drawMinimap(ctx, 250, 4, 66, 48, data.map, data.dots);
+  drawMinimap(ctx, 250, 4, 66, 48, data.map, data.dots, data.pit);
   text(ctx, `MELHOR ${formatTime(data.bestLap)}`, 316, 61, 7, '#ffd23f', 'right');
+
+  // status do pit lane
+  if (data.inPit) {
+    const refueling = data.refueling;
+    const color = refueling ? '#3dff8b' : '#ffd23f';
+    panel(ctx, 150, 19, 90, 15, 0.78);
+    text(ctx, refueling ? 'PIT STOP' : 'PIT LANE', 155, 30, 7, color);
+    text(
+      ctx,
+      refueling ? `${Math.round(data.fuelFrac * 100)}%` : '100',
+      234,
+      30,
+      8,
+      '#ffffff',
+      'right',
+    );
+    if (refueling) {
+      ctx.fillStyle = '#3dff8b';
+      const w = 86 * Math.max(0, Math.min(1, data.fuelFrac));
+      ctx.fillRect(152, 32.5, w, 1);
+    }
+  } else if (data.fuelFrac < 0.18) {
+    const blink = Math.floor(performance.now() / 320) % 2 === 0;
+    if (blink) text(ctx, 'PIT', 314, 197, 7, '#ff4040', 'right');
+  }
 
   // painel de velocidade
   panel(ctx, 4, 187, 104, 33);

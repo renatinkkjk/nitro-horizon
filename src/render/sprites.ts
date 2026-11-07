@@ -274,6 +274,8 @@ const SCENERY: Record<SpriteKind, [number, number]> = {
   building: [1700, 2700],
   stand: [2400, 1300],
   bush: [700, 480],
+  pitsign: [560, 720],
+  pitbox: [2100, 1100],
 };
 
 export function spriteWorldSize(kind: SpriteKind, size: number): [number, number] {
@@ -449,6 +451,60 @@ export function drawScenery(
       for (let i = 0; i < 4; i += 1) {
         ctx.fillRect(-w * 0.46, -h + i * h * 0.24, w * 0.92, Math.max(1, h * 0.08));
       }
+      break;
+    }
+    case 'pitsign': {
+      // poste
+      ctx.fillStyle = '#2f2f3d';
+      ctx.fillRect(-w * 0.04, -h * 0.45, Math.max(1, w * 0.08), h * 0.45);
+      // placa amarela com borda escura
+      ctx.fillStyle = '#14141f';
+      ctx.fillRect(-w * 0.52, -h, Math.max(1, w * 1.04), h * 0.6);
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillRect(-w * 0.49, -h * 0.96, Math.max(1, w * 0.98), h * 0.52);
+      // texto PIT
+      ctx.fillStyle = '#14141f';
+      ctx.font = `bold ${Math.max(3, Math.round(h * 0.26))}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('PIT', 0, -h * 0.78);
+      // setas apontando para a direita (via de boxes)
+      for (let i = 0; i < 2; i += 1) {
+        const cx = -w * 0.1 + i * w * 0.22;
+        poly(
+          ctx,
+          [
+            [cx, -h * 0.62],
+            [cx + w * 0.14, -h * 0.56],
+            [cx, -h * 0.5],
+          ],
+          '#14141f',
+        );
+      }
+      break;
+    }
+    case 'pitbox': {
+      // corpo da garagem
+      ctx.fillStyle = night ? '#151524' : '#7b8496';
+      ctx.fillRect(-w * 0.5, -h * 0.72, Math.max(1, w), h * 0.72);
+      // baias escuras
+      ctx.fillStyle = night ? '#0a0a14' : '#2a3040';
+      for (let i = 0; i < 3; i += 1) {
+        ctx.fillRect(-w * 0.42 + i * w * 0.3, -h * 0.66, w * 0.22, h * 0.62);
+      }
+      // teto com beiral e faixa amarela
+      ctx.fillStyle = night ? '#20203a' : '#e8ecf5';
+      ctx.fillRect(-w * 0.56, -h * 0.9, Math.max(1, w * 1.12), h * 0.18);
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillRect(-w * 0.56, -h * 0.9, Math.max(1, w * 1.12), Math.max(1, h * 0.035));
+      // placa PIT no telhado
+      ctx.fillStyle = '#14141f';
+      ctx.fillRect(-w * 0.16, -h * 0.84, Math.max(1, w * 0.32), h * 0.09);
+      ctx.fillStyle = '#ffd23f';
+      ctx.font = `bold ${Math.max(2, Math.round(h * 0.06))}px monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('PIT', 0, -h * 0.795);
       break;
     }
   }

@@ -37,8 +37,10 @@ export function drawTitleScreen(ctx: CanvasRenderingContext2D, blink: boolean): 
 
   ctx.font = '6px monospace';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('SETAS = DIRIGIR   ESPAÇO = NITRO', 160, 200);
-  ctx.fillText('SHIFT / CTRL = MARCHA   P = PAUSA', 160, 210);
+  ctx.fillText('SETAS = DIRIGIR   ESPAÇO = NITRO', 160, 196);
+  ctx.fillText('SHIFT / CTRL = MARCHA   P = PAUSA', 160, 206);
+  ctx.fillStyle = '#3dff8b';
+  ctx.fillText('PIT STOP: ENTRE À DIREITA NA RETA PRINCIPAL', 160, 218);
 }
 
 export function drawCarSelectScreen(
@@ -165,8 +167,9 @@ export function drawTrackSelectScreen(
   });
 
   const track = tracks[index];
-  text(ctx, track.blurb, 160, 164, 7, '#e8ecff', 'center', false);
-  text(ctx, `15 CARROS · PSEUDO-3D · ${track.laps} VOLTAS`, 160, 178, 6, '#4a5480', 'center', false);
+  text(ctx, track.blurb, 160, 162, 7, '#e8ecff', 'center', false);
+  text(ctx, 'PIT STOP NA RETA PRINCIPAL', 160, 172, 6, '#3dff8b', 'center', false);
+  text(ctx, `15 CARROS · PSEUDO-3D · ${track.laps} VOLTAS`, 160, 181, 6, '#4a5480', 'center', false);
 
   if (blink) text(ctx, '◀  ▶    ENTER PARA LARGAR', 160, 210, 7, '#ffd23f', 'center');
 }
