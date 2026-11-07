@@ -57,8 +57,10 @@ export class Game {
   private lastLaps = 0;
   private fuelWarned = false;
   private wasRefueling = false;
+  private wasNitroPit = false;
   private pitch = 0;
   private pauseIndex = 0;
+  private frameErrors = 0;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -84,13 +86,24 @@ export class Game {
       }
 
       const input = this.input.poll();
-      // Um erro num frame não pode matar o loop de requestAnimationFrame:
-      // sem isso, qualquer exceção congela o jogo para sempre.
+      // Um erro num frame não pode matar o loop de requestAnimationFrame.
+      // Se o erro persistir, volta ao título em vez de ficar travado.
       try {
         this.update(dt, input);
         this.render();
+        this.frameErrors = 0;
       } catch (error) {
-        console.error('[Nitro Horizon] Falha no frame:', error);
+        this.frameErrors += 1;
+        if (this.frameErrors === 1 || this.frameErrors % 120 === 0) {
+          console.error('[Nitro Horizon] Falha no frame:', error);
+        }
+        if (this.frameErrors > 120) {
+          this.frameErrors = 0;
+          this.race = null;
+          this.paused = false;
+          this.audio.silenceEngine();
+          this.state = 'title';
+        }
       }
 
       requestAnimationFrame(frame);
@@ -208,6 +221,14 @@ export class Game {
         }
         this.wasRefueling = player.refueling;
 
+        if (player.nitroPit && !this.wasNitroPit) {
+          this.bannerText = 'PIT STOP';
+          this.bannerSub = 'NITRO RECARREGADO';
+          this.bannerTimer = 1.7;
+          this.audio.beep(980, 0.12, 'square', 0.1);
+        }
+        this.wasNitroPit = player.nitroPit;
+
         if (race.phase === 'finished' && race.finishedAll) {
           this.state = 'results';
         }
@@ -233,6 +254,55 @@ export class Game {
   private changeTrack(direction: number): void {
     this.trackIndex = (this.trackIndex + direction + TRACKS.length) % TRACKS.length;
     this.audio.beep(520, 0.05, 'square', 0.08);
+  }
+
+  /** Liga os botões de toque do HTML ao estado de input do jogo. */
+  attachTouchControls(): void {
+    const buttons = document.querySelectorAll<HTMLElement>('[data-code]');
+    buttons.forEach((button) => {
+      const code = button.dataset.code;
+      if (!code) return;
+
+      const setPressed = (down: boolean): void => {
+        this.input.setVirtual(code, down);
+        button.classList.toggle('active', down);
+      };
+      const press = (event: PointerEvent): void => {
+        event.preventDefault();
+        try {
+          button.setPointerCapture(event.pointerId);
+        } catch {
+          // Ponteiro sintético/indisponível: o release ainda vem por pointerup.
+        }
+        setPressed(true);
+      };
+      const release = (): void => setPressed(false);
+
+      button.addEventListener('pointerdown', press);
+      button.addEventListener('pointerup', release);
+      button.addEventListener('pointercancel', release);
+      button.addEventListener('lostpointercapture', release);
+      button.addEventListener('contextmenu', (event) => event.preventDefault());
+    });
+
+    window.addEventListener('blur', () => {
+      buttons.forEach((button) => button.classList.remove('active'));
+    });
+
+    // Toque/clique direto nas opções do menu de pausa.
+    const canvas = this.ctx.canvas;
+    canvas.addEventListener('pointerdown', (event) => {
+      if (!this.paused) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = ((event.clientX - rect.left) / rect.width) * WIDTH;
+      const y = ((event.clientY - rect.top) / rect.height) * HEIGHT;
+      if (x < 58 || x > 262 || y < 80 || y > 164) return;
+      const index = Math.round((y - 92) / 20);
+      if (index < 0 || index >= PAUSE_OPTIONS.length) return;
+      if (Math.abs(y - (92 + index * 20)) > 10) return;
+      this.pauseIndex = index;
+      this.choosePauseOption();
+    });
   }
 
   private choosePauseOption(): void {
@@ -270,6 +340,7 @@ export class Game {
     this.lastLaps = 0;
     this.fuelWarned = false;
     this.wasRefueling = false;
+    this.wasNitroPit = false;
     this.state = 'race';
   }
 

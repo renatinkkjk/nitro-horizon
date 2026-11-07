@@ -38,6 +38,7 @@ const BLOCKED = new Set([
 export class Input {
   private held = new Set<string>();
   private pressed = new Set<string>();
+  private virtual = new Set<string>();
 
   constructor(target: Window = window) {
     target.addEventListener('keydown', (event) => {
@@ -52,13 +53,26 @@ export class Input {
     target.addEventListener('blur', () => {
       this.held.clear();
       this.pressed.clear();
+      this.virtual.clear();
     });
+  }
+
+  /** Controles de toque: injeta um código de tecla virtual (pressionado/solto). */
+  setVirtual(code: string, down: boolean): void {
+    if (down) {
+      if (!this.virtual.has(code)) this.pressed.add(code);
+      this.virtual.add(code);
+    } else {
+      this.virtual.delete(code);
+    }
   }
 
   poll(): InputState {
     const held = this.held;
+    const virtual = this.virtual;
     const pressed = this.pressed;
-    const has = (...codes: string[]) => codes.some((code) => held.has(code));
+    const has = (...codes: string[]) =>
+      codes.some((code) => held.has(code) || virtual.has(code));
     const hit = (...codes: string[]) => codes.some((code) => pressed.has(code));
 
     const state: InputState = {
