@@ -2,7 +2,7 @@ import { AudioEngine } from './core/audio';
 import { Input, type InputState } from './core/input';
 import { CAR_SPECS } from './entities/carspecs';
 import { Race, type Racer } from './race/race';
-import { drawHud, type HudData, type MinimapDot } from './render/hud';
+import { drawHud, drawBanner, formatTime, type HudData, type MinimapDot } from './render/hud';
 import {
   CAMERA_HEIGHT,
   DRAW_DISTANCE,
@@ -48,7 +48,11 @@ export class Game {
   private blinkTimer = 0;
   private paused = false;
   private braking = false;
-  private dust: Array<{ x: number; y: number; vx: number; vy: number; life: number; size: number }> = [];
+
+  private bannerText = '';
+  private bannerSub = '';
+  private bannerTimer = 0;
+  private lastLaps = 0;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -138,26 +142,22 @@ export class Game {
         this.braking = input.brake;
         race.update(dt, input);
 
-        // partículas de poeira quando o jogador está fora da pista
-        if (race.phase === 'racing' && race.player.offRoad && Math.random() < 0.5) {
-          const angle = (Math.random() - 0.5) * 1.2 + Math.PI / 2;
-          const speed = Math.random() * 20 + 10;
-          this.dust.push({
-            x: 160 + race.player.steer * 8 + Math.cos(angle) * 4,
-            y: 216,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: 0.35 + Math.random() * 0.25,
-            size: 1 + Math.random() * 2,
-          });
-        }
-        // atualizar e limpar partículas de poeira
-        for (let i = this.dust.length - 1; i >= 0; i -= 1) {
-          const d = this.dust[i];
-          d.x += d.vx * dt;
-          d.y += d.vy * dt;
-          d.life -= dt;
-          if (d.life <= 0) this.dust.splice(i, 1);
+        this.bannerTimer = Math.max(0, this.bannerTimer - dt);
+
+        const player = race.player;
+        if (player.lapsDone !== this.lastLaps) {
+          this.lastLaps = player.lapsDone;
+          if (player.lapsDone > 0) {
+            const next = player.lapsDone + 1;
+            this.bannerText =
+              next > race.track.laps
+                ? 'BANDEIRADA'
+                : next === race.track.laps
+                  ? 'ÚLTIMA VOLTA'
+                  : `VOLTA ${next}/${race.track.laps}`;
+            this.bannerSub = `MELHOR ${formatTime(player.bestLap)}`;
+            this.bannerTimer = 2.2;
+          }
         }
 
         if (race.phase === 'finished' && race.finishedAll) {
@@ -192,6 +192,8 @@ export class Game {
     this.audio.beep(880, 0.16, 'square', 0.16);
     this.race = new Race(TRACKS[this.trackIndex], CAR_SPECS[this.carIndex], this.audio);
     this.paused = false;
+    this.bannerTimer = 0;
+    this.lastLaps = 0;
     this.state = 'race';
   }
 
@@ -255,10 +257,13 @@ export class Game {
     this.renderWorld(track, camZ, camX, camY, race.racers);
     this.drawPlayerCar(race);
     this.drawSpeedFx(race);
-    this.drawDust(ctx);
     ctx.restore();
 
     drawHud(ctx, this.buildHud(race));
+
+    if (this.bannerTimer > 0 && !this.paused) {
+      drawBanner(ctx, this.bannerText, this.bannerSub, '#ffd23f');
+    }
 
     if (race.phase === 'countdown') drawCountdown(ctx, race.countdown);
     if (this.paused) drawPauseScreen(ctx);
@@ -282,50 +287,8 @@ export class Game {
     const theme = track.theme;
     const night = track.id === 'cidade';
 
-    // céu
-    const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT * 0.62);
-    gradient.addColorStop(0, theme.skyTop);
-    gradient.addColorStop(1, theme.skyBottom);
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-    // sol / lua com raios de luz
-    ctx.fillStyle = theme.horizon;
-    ctx.beginPath();
-    ctx.arc(WIDTH * 0.72, 58, 20, 0, Math.PI * 2);
-    ctx.fill();
-    if (night) {
-      // raios da lua
-      ctx.strokeStyle = 'rgba(160,180,255,0.35)';
-      ctx.lineWidth = 1;
-      for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
-        ctx.beginPath();
-        ctx.moveTo(WIDTH * 0.72 + Math.cos(a) * 22, 58 + Math.sin(a) * 22);
-        ctx.lineTo(WIDTH * 0.72 + Math.cos(a) * 34, 58 + Math.sin(a) * 34);
-        ctx.stroke();
-      }
-      // estrelas no céu noturno
-      ctx.fillStyle = '#ffffff';
-      const starSeed = Math.floor(cameraZ / 400);
-      for (let i = 0; i < 24; i += 1) {
-        const sx = ((starSeed * 37 + i * 73) % WIDTH);
-        const sy = ((starSeed * 53 + i * 91) % (HEIGHT * 0.55));
-        const bright = ((starSeed * 11 + i * 17) % 3) === 0;
-        ctx.globalAlpha = bright ? 0.9 : 0.45;
-        ctx.fillRect(sx, sy, bright ? 2 : 1, bright ? 2 : 1);
-      }
-      ctx.globalAlpha = 1;
-    } else {
-      // raios do sol
-      ctx.strokeStyle = 'rgba(255,215,150,0.35)';
-      ctx.lineWidth = 1;
-      for (let a = 0; a < Math.PI * 2; a += Math.PI / 8) {
-        ctx.beginPath();
-        ctx.moveTo(WIDTH * 0.72 + Math.cos(a) * 22, 58 + Math.sin(a) * 22);
-        ctx.lineTo(WIDTH * 0.72 + Math.cos(a) * 34, 58 + Math.sin(a) * 34);
-        ctx.stroke();
-      }
-    }
+    // céu, sol/lua, estrelas e nuvens
+    this.drawSky(theme, night, cameraZ, cameraX);
 
     // parallax
     const offset = cameraZ * 0.00035 + cameraX * 0.02;
@@ -347,6 +310,79 @@ export class Game {
 
     this.drawSceneryLayer(visible, night);
     if (racers) this.drawRacersLayer(track, visible, racers, cameraZ);
+  }
+
+  private drawSky(
+    theme: Track['theme'],
+    night: boolean,
+    cameraZ: number,
+    cameraX: number,
+  ): void {
+    const ctx = this.ctx;
+    const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT * 0.62);
+    gradient.addColorStop(0, theme.skyTop);
+    gradient.addColorStop(1, theme.skyBottom);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    const cx = WIDTH * 0.72;
+    const cy = night ? 54 : 58;
+
+    // halo do sol / lua
+    const halo = ctx.createRadialGradient(cx, cy, 2, cx, cy, night ? 46 : 56);
+    halo.addColorStop(0, night ? 'rgba(200,212,255,0.4)' : 'rgba(255,226,150,0.55)');
+    halo.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(cx - 64, cy - 64, 128, 128);
+
+    if (night) {
+      // estrelas com cintilância e leve parallax
+      for (let i = 0; i < 54; i += 1) {
+        const px = mod(i * 73 + cameraX * 0.004, WIDTH);
+        const py = 4 + ((i * 37) % 96);
+        const twinkle = 0.35 + 0.65 * Math.abs(Math.sin(i * 1.7 + this.time * 1.4));
+        ctx.globalAlpha = twinkle * 0.85;
+        ctx.fillStyle = i % 9 === 0 ? '#ffd8a8' : '#dfe8ff';
+        ctx.fillRect(Math.round(px), Math.round(py), i % 7 === 0 ? 2 : 1, 1);
+      }
+      ctx.globalAlpha = 1;
+
+      // lua com crateras
+      ctx.fillStyle = '#eef0ff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(158,168,210,0.35)';
+      ctx.beginPath();
+      ctx.arc(cx - 5, cy - 4, 3, 0, Math.PI * 2);
+      ctx.arc(cx + 4, cy + 3, 2, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // sol
+      ctx.fillStyle = theme.horizon;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 20, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.32)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+      ctx.fill();
+
+      // nuvens suaves
+      const drift = mod(cameraZ * 0.0008 + this.time * 1.4, 420);
+      for (let i = 0; i < 3; i += 1) {
+        const cloudX = mod(i * 140 + 340 - drift, 480) - 80;
+        const cloudY = 34 + i * 17;
+        ctx.globalAlpha = 0.12;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(cloudX, cloudY, 34, 7, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloudX + 22, cloudY + 2, 22, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(cloudX - 20, cloudY + 3, 18, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
   }
 
   private drawMountains(baseY: number, height: number, color: string, offset: number, period: number): void {
@@ -399,28 +435,23 @@ export class Game {
     const visibleIndex = new Map<number, number>();
     visible.forEach((segment, index) => visibleIndex.set(segment.index, index));
 
-    const list: Array<{ visible: number; racer: Racer; pct: number; tooClose: boolean }> = [];
+    const list: Array<{ visible: number; racer: Racer; pct: number }> = [];
 
     for (const racer of racers) {
       if (racer === player) continue;
 
       const z = mod(racer.distance, track.length);
-      // Distância relativa ao jogador na pista (circuito). Mantemos carros
-      // que estejam dentro do alcance de desenho. Não descartamos carros
-      // muito próximos (gap < 500) — isso fazia o oponente sumir ao encostar.
+      // Só descarta quem está atrás da câmera ou além da distância de desenho.
+      // (Antes, carros próximos sumiam e ainda colidiam com o jogador.)
       const gap = mod(racer.distance - cameraZ, track.length);
-      if (gap > DRAW_DISTANCE * SEGMENT_LENGTH) continue;
-      // Quando o oponente está muito perto (colado na frente), não pule desenhar —
-      // apenas limite o tamanho para não explodir a escala e fazer o carro sumir/pisca.
-      const tooClose = gap < 220;
+      if (gap < 30 || gap > DRAW_DISTANCE * SEGMENT_LENGTH) continue;
 
       const index = Math.floor(z / SEGMENT_LENGTH) % track.segments.length;
       const visiblePosition = visibleIndex.get(index);
       if (visiblePosition === undefined) continue;
-      list.push({ visible: visiblePosition, racer, pct: (z % SEGMENT_LENGTH) / SEGMENT_LENGTH, tooClose });
+      list.push({ visible: visiblePosition, racer, pct: (z % SEGMENT_LENGTH) / SEGMENT_LENGTH });
     }
 
-    // Desenha do mais distante para o mais próximo (painter's algorithm).
     list.sort((a, b) => b.visible - a.visible);
 
     for (const item of list) {
@@ -434,21 +465,24 @@ export class Game {
       const cx = lerp(s1.x, s2.x, pct) + item.racer.offset * lerp(s1.w, s2.w, pct);
       const cy = lerp(s1.y, s2.y, pct);
 
-      if (cy < segment.clip) continue;
+      if (cy < segment.clip - 1) continue;
 
-      let w = (scale * CAR_WORLD_WIDTH * WIDTH) / 2;
-      let h = (scale * CAR_WORLD_HEIGHT * HEIGHT) / 2;
+      const w = (scale * CAR_WORLD_WIDTH * WIDTH) / 2;
+      const h = (scale * CAR_WORLD_HEIGHT * HEIGHT) / 2;
       if (w < 1.5 || h < 1.5) continue;
-      // Limite máximo para oponente não ficar maior que o carro do jogador nem cobrir a tela.
-      if (w > WIDTH * 0.55) w = WIDTH * 0.55;
-      if (h > HEIGHT * 0.55) h = HEIGHT * 0.55;
-      if (cx < -w || cx > WIDTH + w) continue;
 
-      drawCar(ctx, cx, cy, w, h, { body: item.racer.body, accent: item.racer.accent }, {
-        carNumber: item.racer.id + 1,
-        // Quando está muito perto (colado), deixa ligeiramente semitransparente para não
-        // confundir com o carro do jogador.
-        alpha: item.tooClose ? 0.85 : 1,
+      // Limita o tamanho de carros muito próximos em vez de sumir com eles.
+      const shrink = w > 96 ? 96 / w : 1;
+      const drawW = w * shrink;
+      const drawH = h * shrink;
+      const drawY = Math.min(cy, HEIGHT);
+
+      if (cx < -drawW || cx > WIDTH + drawW) continue;
+
+      drawCar(ctx, cx, drawY, drawW, drawH, {
+        body: item.racer.body,
+        accent: item.racer.accent,
+        style: item.racer.spec.style,
       });
     }
   }
@@ -464,7 +498,7 @@ export class Game {
       216,
       64,
       46,
-      { body: player.body, accent: player.accent },
+      { body: player.body, accent: player.accent, style: player.spec.style },
       {
         brake: this.braking,
         nitro,
@@ -494,33 +528,14 @@ export class Game {
     }
   }
 
-  private drawDust(ctx: CanvasRenderingContext2D): void {
-    if (this.dust.length === 0) return;
-    for (const d of this.dust) {
-      const alpha = d.life / 0.6;
-      ctx.fillStyle = `rgba(190,150,90,${alpha * 0.7})`;
-      ctx.fillRect(Math.round(d.x), Math.round(d.y), d.size, d.size);
-    }
-  }
-
   private buildHud(race: Race): HudData {
     const player = race.player;
-    const mapLength = race.track.map.length;
-    const last = Math.max(0, mapLength - 1);
 
     const dots: MinimapDot[] = race.racers.map((racer) => {
-      // Como a pista é um circuito, usamos a distância normalizada [0,1]
-      // para indexar o mapa. Interpolamos entre dois pontos adjacentes para
-      // o carro se mover suavemente no minimapa em vez de pular de ponto em ponto.
       const t = mod(racer.distance, race.track.length) / race.track.length;
-      const floatIndex = t * last;
-      const i0 = Math.floor(floatIndex) % mapLength;
-      const i1 = (i0 + 1) % mapLength;
-      const frac = floatIndex - Math.floor(floatIndex);
-      const [x0, y0] = race.track.map[i0];
-      const [x1, y1] = race.track.map[i1];
-      const x = lerp(x0, x1, frac);
-      const y = lerp(y0, y1, frac);
+      const last = race.track.map.length - 1;
+      const index = Math.min(last, Math.max(0, Math.floor(t * last)));
+      const [x, y] = race.track.map[index];
       return { x, y, color: racer.body, isPlayer: racer.isPlayer };
     });
 
@@ -540,7 +555,7 @@ export class Game {
       totalTime: race.time,
       map: race.track.map,
       dots,
-      lastLap: player.lapsDone === race.track.laps - 1,
+      lastLap: player.lapsDone === race.track.laps - 1 && this.bannerTimer <= 0,
       message: '',
       messageTimer: 0,
     };

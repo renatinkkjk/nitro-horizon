@@ -115,58 +115,52 @@ function decorate(segments: Segment[], kinds: SpriteKind[], rng: Rng): void {
   }
 }
 
-/**
- * Constrói o mapa top-down (minimapa) da pista.
- * A pista é um CIRCUITO fechado, então o mapa deve ser um loop:
- * o último ponto volta a se conectar ao primeiro.
- */
 function buildMap(segments: Segment[]): Array<[number, number]> {
   const points: Array<[number, number]> = [[0, 0]];
   let heading = 0;
   let x = 0;
   let y = 0;
-  // Amostra mais densa para o traçado ficar suave no minimapa.
-  const sampleEvery = Math.max(1, Math.floor(segments.length / 360));
+  const sampleEvery = Math.max(1, Math.floor(segments.length / 220));
+
+  // Normaliza a curvatura para o traçado dar exatamente uma volta (360°),
+  // garantindo que o minimapa seja um circuito fechado e não um "sprint".
+  const totalCurve = segments.reduce((sum, segment) => sum + segment.curve, 0);
+  const headingStep = Math.abs(totalCurve) > 1 ? (Math.PI * 2) / totalCurve : 0;
 
   for (let i = 0; i < segments.length; i++) {
-    heading += segments[i].curve * 0.0034;
+    heading += segments[i].curve * headingStep;
     x += Math.sin(heading);
     y += Math.cos(heading);
     if (i % sampleEvery === 0) points.push([x, y]);
   }
 
-  // O circuito pode não voltar exatamente ao ponto de partida (x,y != 0,0)
-  // mesmo que a direção volte. Ajustamos todos os pontos com uma correção
-  // linear para forçar o fechamento perfeito em (0,0).
-  const endX = x;
-  const endY = y;
-  const corrected: Array<[number, number]> = [];
-  for (let i = 0; i < points.length; i += 1) {
-    const t = i / Math.max(1, points.length - 1);
-    corrected.push([
-      points[i][0] - endX * t,
-      points[i][1] - endY * t,
-    ]);
-  }
+  // Fecha o traçado distribuindo o erro residual ao longo de toda a volta.
+  const [endX, endY] = points[points.length - 1];
+  const last = points.length - 1;
+  const closed = points.map(([px, py], i): [number, number] => [
+    px - (endX * i) / last,
+    py - (endY * i) / last,
+  ]);
 
   let minX = Infinity;
   let maxX = -Infinity;
   let minY = Infinity;
   let maxY = -Infinity;
-  for (const [px, py] of corrected) {
+  for (const [px, py] of closed) {
     minX = Math.min(minX, px);
     maxX = Math.max(maxX, px);
     minY = Math.min(minY, py);
     maxY = Math.max(maxY, py);
   }
 
+  // Normaliza cada eixo separadamente: as pistas são muito mais longas que
+  // largas, e uma escala uniforme achataria o traçado numa linha reta.
   const spanX = maxX - minX || 1;
   const spanY = maxY - minY || 1;
-  const span = Math.max(spanX, spanY);
 
-  return corrected.map(([px, py]) => [
-    ((px - minX) / span) * 2 - 1,
-    ((py - minY) / span) * 2 - 1,
+  return closed.map(([px, py]) => [
+    ((px - minX) / spanX) * 2 - 1,
+    ((py - minY) / spanY) * 2 - 1,
   ]);
 }
 

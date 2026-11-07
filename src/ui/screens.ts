@@ -2,7 +2,7 @@ import type { Race, Racer } from '../race/race';
 import type { CarSpec } from '../entities/carspecs';
 import type { Track } from '../world/track';
 import { drawCar } from '../render/sprites';
-import { formatTime, panel, text } from '../render/hud';
+import { formatTime, panel, text, traceTrack } from '../render/hud';
 
 function title(ctx: CanvasRenderingContext2D, value: string, y: number, size: number, color: string): void {
   ctx.font = `bold ${size}px monospace`;
@@ -68,7 +68,11 @@ export function drawCarSelectScreen(
       ctx.strokeRect(x + 1, y + 1, cardW - 2, h - 2);
     }
 
-    drawCar(ctx, x + cardW / 2, y + h - 12, 44, 26, { body: car.body, accent: car.accent });
+    drawCar(ctx, x + cardW / 2, y + h - 12, 44, 26, {
+      body: car.body,
+      accent: car.accent,
+      style: car.style,
+    });
 
     ctx.font = 'bold 6px monospace';
     ctx.textAlign = 'center';
@@ -155,14 +159,7 @@ export function drawTrackSelectScreen(
     const oy = my + mh / 2 - ((minY + maxY) / 2) * scale;
     ctx.strokeStyle = selected ? '#22e0ff' : '#3d4a80';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    track.map.forEach(([px, py], k) => {
-      const sx = ox + px * scale;
-      const sy = oy + py * scale;
-      if (k === 0) ctx.moveTo(sx, sy);
-      else ctx.lineTo(sx, sy);
-    });
-    ctx.stroke();
+    traceTrack(ctx, track.map, ox, oy, scale);
 
     text(ctx, `${track.laps} VOLTAS`, x + cardW / 2, y + h - 8, 6, '#8b93bd', 'center', false);
   });
@@ -209,11 +206,12 @@ export function drawResultsScreen(ctx: CanvasRenderingContext2D, race: Race, bli
       ctx.fillStyle = 'rgba(34,224,255,0.14)';
       ctx.fillRect(6, y - 10, 308, 12);
     }
-    const color = isPlayer ? '#22e0ff' : '#c8d0e0';
-    text(ctx, `${i + 1}`, 10, y, 8, color);
+    const medal = i === 0 ? '#ffd23f' : i === 1 ? '#c8d4e8' : i === 2 ? '#e0955a' : null;
+    const color = isPlayer ? '#22e0ff' : medal ?? '#c8d0e0';
+    text(ctx, `${i + 1}`, 10, y, 8, medal ?? color);
     text(ctx, racer.name, 34, y, 8, color);
-    text(ctx, `#${racer.body.replace('#', '')}`, 104, y, 6, '#4a5480', 'left', false);
-    if (racer.isPlayer) text(ctx, '◀ VOCÊ', 150, y, 6, '#22e0ff');
+    text(ctx, racer.spec.name, 96, y, 6, isPlayer ? '#7f9bd6' : '#5a6388', 'left', false);
+    if (racer.isPlayer) text(ctx, '◀ VOCÊ', 158, y, 6, '#22e0ff');
     const value = racer.finished ? formatTime(racer.finishTime) : `volta ${racer.lapsDone + 1}`;
     text(ctx, value, 310, y, 8, color, 'right');
   });

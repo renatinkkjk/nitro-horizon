@@ -6,12 +6,15 @@ export interface CarStats {
   consumo: number;
 }
 
+export type CarStyle = 'gt' | 'muscle' | 'light' | 'turbo';
+
 export interface CarSpec {
   id: string;
   name: string;
   tagline: string;
   body: string;
   accent: string;
+  style: CarStyle;
   maxSpeed: number;
   accelFactor: number;
   grip: number;
@@ -29,6 +32,7 @@ export const CAR_SPECS: CarSpec[] = [
     tagline: 'Equilibrado — o all-rounder.',
     body: '#e8e8f0',
     accent: '#ff3d7f',
+    style: 'gt',
     maxSpeed: 11800,
     accelFactor: 4.2,
     grip: 0.86,
@@ -43,6 +47,7 @@ export const CAR_SPECS: CarSpec[] = [
     tagline: 'Velocista — reta é com ele.',
     body: '#ff8a3d',
     accent: '#ffd23f',
+    style: 'muscle',
     maxSpeed: 12800,
     accelFactor: 5.2,
     grip: 0.7,
@@ -57,6 +62,7 @@ export const CAR_SPECS: CarSpec[] = [
     tagline: 'Ágil e leve — vive das curvas.',
     body: '#3dff8b',
     accent: '#22e0ff',
+    style: 'light',
     maxSpeed: 11200,
     accelFactor: 3.5,
     grip: 1.0,
@@ -71,6 +77,7 @@ export const CAR_SPECS: CarSpec[] = [
     tagline: 'Nitro agressivo — tudo ou nada.',
     body: '#6c4bff',
     accent: '#22e0ff',
+    style: 'turbo',
     maxSpeed: 12200,
     accelFactor: 4.0,
     grip: 0.74,

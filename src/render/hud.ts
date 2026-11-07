@@ -34,6 +34,48 @@ export interface HudData {
   messageTimer: number;
 }
 
+/**
+ * Desenha o traçado como uma curva fechada e suave, passando pelos pontos
+ * do mapa. Evita o aspecto "poligonal" do minimapa.
+ */
+export function traceTrack(
+  ctx: CanvasRenderingContext2D,
+  map: Array<[number, number]>,
+  ox: number,
+  oy: number,
+  scale: number,
+): void {
+  if (map.length < 3) return;
+
+  const points = map.slice();
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (Math.abs(first[0] - last[0]) < 1e-6 && Math.abs(first[1] - last[1]) < 1e-6) {
+    points.pop();
+  }
+
+  const n = points.length;
+  const at = (i: number): [number, number] => {
+    const [px, py] = points[((i % n) + n) % n];
+    return [ox + px * scale, oy + py * scale];
+  };
+  const mid = (a: [number, number], b: [number, number]): [number, number] => [
+    (a[0] + b[0]) / 2,
+    (a[1] + b[1]) / 2,
+  ];
+
+  const start = mid(at(0), at(1));
+  ctx.beginPath();
+  ctx.moveTo(start[0], start[1]);
+  for (let i = 1; i <= n; i += 1) {
+    const current = at(i);
+    const next = mid(current, at(i + 1));
+    ctx.quadraticCurveTo(current[0], current[1], next[0], next[1]);
+  }
+  ctx.closePath();
+  ctx.stroke();
+}
+
 export function panel(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -84,11 +126,6 @@ function bar(
   ctx.fillRect(x + 1, y + 1, Math.max(0, (w - 2) * Math.max(0, Math.min(1, frac))), h - 2);
 }
 
-/**
- * Desenha o minimapa como um CIRCUITO fechado.
- * O trajeto fecha o loop (último ponto conecta ao primeiro),
- * então a corrida de circuito é representada corretamente.
- */
 function drawMinimap(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -99,6 +136,12 @@ function drawMinimap(
   dots: MinimapDot[],
 ): void {
   panel(ctx, x, y, w, h);
+
+  // Mesma transformação usada no traçado e nos pontos, para os carros
+  // aparecerem exatamente sobre o circuito.
+  let ox = x + w / 2;
+  let oy = y + h / 2;
+  let scale = 1;
 
   if (map.length > 1) {
     let minX = Infinity;
@@ -111,65 +154,37 @@ function drawMinimap(
       minY = Math.min(minY, my);
       maxY = Math.max(maxY, my);
     }
-    const pad = 3;
+    const pad = 4;
     const scaleX = (w - pad * 2) / Math.max(0.0001, maxX - minX);
     const scaleY = (h - pad * 2) / Math.max(0.0001, maxY - minY);
-    const scale = Math.min(scaleX, scaleY);
-    const ox = x + w / 2 - ((minX + maxX) / 2) * scale;
-    const oy = y + h / 2 - ((minY + maxY) / 2) * scale;
+    scale = Math.min(scaleX, scaleY);
+    ox = x + w / 2 - ((minX + maxX) / 2) * scale;
+    oy = y + h / 2 - ((minY + maxY) / 2) * scale;
 
-    // Trajeto do circuito (linha fechada, mais visível)
-    ctx.strokeStyle = '#5a6a90';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    map.forEach(([mx, my], index) => {
-      const px = ox + mx * scale;
-      const py = oy + my * scale;
-      if (index === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    });
-    // Fecha o loop do circuito
-    ctx.closePath();
-    ctx.stroke();
-
-    // Borda interna do traçado (dá profundidade)
-    ctx.strokeStyle = '#2a3560';
+    ctx.strokeStyle = '#3d4a80';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    map.forEach(([mx, my], index) => {
-      const px = ox + mx * scale * 0.88;
-      const py = oy + my * scale * 0.88;
-      if (index === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
-    });
-    ctx.closePath();
-    ctx.stroke();
+    traceTrack(ctx, map, ox, oy, scale);
 
-    // Linha de chegada (bandeira quadriculada no começo do mapa)
-    const [fx, fy] = map[0];
-    const fpx = ox + fx * scale;
-    const fpy = oy + fy * scale;
-    ctx.fillStyle = '#ffd23f';
-    ctx.fillRect(fpx - 2, fpy - 2, 4, 4);
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(fpx - 1, fpy - 1, 2, 2);
-    ctx.fillRect(fpx + 1, fpy + 1, 2, 2);
+    // marca da linha de largada/chegada
+    const [startX, startY] = map[0];
+    const sx = Math.round(ox + startX * scale);
+    const sy = Math.round(oy + startY * scale);
+    ctx.fillStyle = '#0a0c16';
+    ctx.fillRect(sx - 2, sy - 2, 5, 5);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(sx - 1, sy - 1, 2, 2);
+    ctx.fillRect(sx + 1, sy + 1, 1, 1);
   }
 
-  const padding = 2;
   for (const dot of dots) {
-    const px = x + padding + ((dot.x + 1) / 2) * (w - padding * 2);
-    const py = y + padding + ((dot.y + 1) / 2) * (h - padding * 2);
+    const px = ox + dot.x * scale;
+    const py = oy + dot.y * scale;
     if (dot.isPlayer) {
-      // Jogador: ponto branco maior com contorno
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = 'rgba(34,224,255,0.35)';
       ctx.fillRect(Math.round(px) - 2, Math.round(py) - 2, 5, 5);
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(Math.round(px) - 1, Math.round(py) - 1, 3, 3);
     } else {
-      // Oponente: ponto menor com cor do carro
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(Math.round(px) - 1, Math.round(py) - 1, 3, 3);
       ctx.fillStyle = dot.color;
       ctx.fillRect(Math.round(px), Math.round(py), 2, 2);
     }
@@ -195,7 +210,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
 
   text(ctx, `TOTAL ${formatTime(data.totalTime)}`, 6, 27, 7, '#8b93bd');
 
-  // minimapa (circuito fechado)
+  // minimapa
   drawMinimap(ctx, 250, 4, 66, 48, data.map, data.dots);
   text(ctx, `MELHOR ${formatTime(data.bestLap)}`, 316, 61, 7, '#ffd23f', 'right');
 

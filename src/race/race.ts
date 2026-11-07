@@ -254,12 +254,12 @@ export class Race {
       const ahead = this.track.segments[(idx + 10) % count];
       const curveMag = Math.abs(here.curve) * 0.55 + Math.abs(ahead.curve) * 0.45;
 
-      let target = r.spec.maxSpeed * (0.8 + r.skill * 0.17);
-      target *= 1 - Math.min(0.3, curveMag * 0.042);
+      let target = r.spec.maxSpeed * (0.84 + r.skill * 0.15);
+      target *= 1 - Math.min(0.22, curveMag * 0.032);
 
       const gap = this.player.distance - r.distance;
-      if (gap > 1600) target *= 1.045;
-      else if (gap < -5200) target *= 0.965;
+      if (gap > 1200) target *= 1.06;
+      else if (gap < -2600) target *= 0.97;
 
       const accel = r.spec.maxSpeed / (r.spec.accelFactor * 1.2);
       if (r.speed < target) r.speed = Math.min(target, r.speed + accel * dt);

@@ -1,53 +1,48 @@
 import { buildTrack, type Track, type TrackBuilder, type TrackDef } from './track';
 
 function desert(b: TrackBuilder): void {
-  b.straight(45);
-  b.curve(40, 2, 20);
+  b.straight(50);
+  b.curve(45, 2.5, 15); // T1: curva longa à direita
   b.straight(35);
-  b.curve(40, -2, -20);
-  b.straight(45);
-  b.hill(40, 35);
-  b.hill(40, -35);
-  b.curve(45, 3, 0);
-  b.straight(30);
-  b.curve(45, -3, 0);
-  b.curve(35, 2, 20);
-  b.curve(35, -2, -20);
+  b.curve(30, -1.2, -10); // kink à esquerda
   b.straight(25);
+  b.curve(45, 3, 30); // direita com subida
+  b.straight(30);
+  b.curve(35, 2, -25); // direita na descida
+  b.curve(30, -1.4, 0); // kink à esquerda
+  b.straight(30);
+  b.curve(50, 3.6, 10); // última curva antes da reta principal
+  b.straight(45);
 }
 
 function coast(b: TrackBuilder): void {
   b.straight(35);
-  b.curve(35, 3, 15);
-  b.curve(35, -3, -15);
+  b.curve(35, 3, 15); // direita de entrada
+  b.curve(30, -2, -10);
   b.straight(25);
   b.hill(35, 45);
-  b.curve(35, 4, -20);
-  b.curve(35, -4, -25);
+  b.curve(40, 4, -20); // direita fechada na descida
+  b.curve(25, -3, -15);
   b.straight(30);
-  b.sCurves();
-  b.curve(40, 2, 30);
-  b.hill(35, -30);
-  b.curve(35, -3, 0);
+  b.curve(30, 2, 10);
+  b.curve(30, -1.5, 0);
+  b.curve(35, 3.2, 20); // direita final
   b.straight(25);
 }
 
 function city(b: TrackBuilder): void {
   b.straight(25);
-  b.curve(30, 5, 10);
-  b.curve(25, -5, -10);
+  b.curve(30, 5, 5); // curva 1 fechada
+  b.curve(20, -3, 0);
   b.straight(18);
-  b.curve(30, -6, 0);
-  b.curve(25, 6, 15);
-  b.hill(30, 30);
-  b.curve(30, 4, -15);
+  b.curve(25, 4, 0);
+  b.curve(30, -2, 12);
+  b.hill(30, 25);
+  b.curve(30, 5, -10);
   b.straight(20);
-  b.curve(25, -5, 0);
-  b.curve(25, 5, 20);
-  b.curve(30, -4, -20);
-  b.straight(20);
-  b.curve(30, 6, 0);
-  b.curve(25, -6, 0);
+  b.curve(25, -3, 0);
+  b.curve(35, 4.2, 15);
+  b.curve(25, -2, 0);
   b.straight(25);
 }
 
@@ -56,7 +51,7 @@ const definitions: TrackDef[] = [
     id: 'deserto',
     name: 'DESERTO',
     difficulty: 'FÁCIL',
-    blurb: 'Retas longas ao entardecer. Boa para aprender a trocar marcha.',
+    blurb: 'Circuito rápido de retas longas ao entardecer. Bom para aprender a trocar marcha.',
     laps: 5,
     seed: 1337,
     build: desert,
@@ -110,7 +105,7 @@ const definitions: TrackDef[] = [
     id: 'cidade',
     name: 'CIDADE',
     difficulty: 'DIFÍCIL',
-    blurb: 'Curvas fechadas entre prédios à noite. Nitro é obrigatório.',
+    blurb: 'Circuito noturno de curvas fechadas entre prédios. Nitro é obrigatório.',
     laps: 4,
     seed: 9091,
     build: city,

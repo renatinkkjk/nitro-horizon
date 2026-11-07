@@ -24,21 +24,23 @@
 
 ---
 
-## ✅ Estado atual (v0.1 — MVP jogável)
+## ✅ Estado atual (v0.2 — circuitos fechados e visual refinado)
 
 Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → resultado**.
 
 - [x] Motor pseudo-3D por segmentos com curvas e colinas
 - [x] Render 320×224 escalado com pixels nítidos (`image-rendering: pixelated`)
-- [x] Céu com gradiente, sol/lua e parallax de montanhas
+- [x] Céu com gradiente, sol com halo, nuvens, estrelas e lua com crateras
 - [x] Cenário procedural por segmento (cactos, palmeiras, árvores, rochas, placas, postes, prédios, outdoors)
+- [x] **Circuitos fechados**: o traçado dá 360° por volta e o minimapa fecha o loop com linha de largada
+- [x] **Carros redesenhados** em 4 estilos (GT, muscle, light e turbo), com pintura em dois tons, vidro com reflexo, aerofólio, lanternas e escapamentos
 - [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
 - [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
 - [x] Gasolina com consumo por RPM/nitro e modo reserva
-- [x] 14 IAs com alvo de velocidade por curva, troca de faixa, desvio e rubber-band suave
+- [x] 14 IAs competitivas, com alvo de velocidade por curva, troca de faixa e rubber-band
 - [x] Colisões carro×carro (empurrão lateral + perda de velocidade)
-- [x] Voltas, melhor volta, posição e classificação em tempo real
+- [x] Voltas, melhor volta, posição e classificação em tempo real, com banner de "última volta"
 - [x] HUD completo: posição, volta, tempos, minimapa, velocidade, marcha, RPM, gasolina e nitro
 - [x] Contagem regressiva, pausa, tela de resultado e "última volta"
 - [x] Áudio sintetizado via WebAudio (motor por RPM, nitro, colisão, bipes)
@@ -76,12 +78,12 @@ O câmbio começa **automático**. Trocar de marcha manualmente funciona em para
 
 ## 🚗 Os 4 carros
 
-| Modelo | Perfil | Nitros | Tanque | Grip |
-|---|---|---|---|---|
-| **Falcão GT** | Equilibrado | 3 | 96 | Alto |
-| **Trovão V8** | Velocista | 2 | 112 | Baixo |
-| **Vespa RS** | Ágil / leve | 3 | 74 | Máximo |
-| **Titã Turbo** | Nitro agressivo | 4 | 80 | Baixo |
+| Modelo | Perfil | Estilo | Nitros | Tanque | Grip |
+|---|---|---|---|---|---|
+| **Falcão GT** | Equilibrado | GT (asa discreta) | 3 | 96 | Alto |
+| **Trovão V8** | Velocista | Muscle (faixas duplas) | 2 | 112 | Baixo |
+| **Vespa RS** | Ágil / leve | Light (barra de luz) | 3 | 74 | Máximo |
+| **Titã Turbo** | Nitro agressivo | Turbo (asa grande) | 4 | 80 | Baixo |
 
 As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leves de skill (0,84–1,02), o que gera um grid variado sem parecer trapaça.
 
@@ -91,11 +93,11 @@ As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leve
 
 | Pista | Dificuldade | Característica | Voltas |
 |---|---|---|---|
-| **Deserto** | Fácil | Retas longas ao entardecer | 5 |
-| **Litoral** | Médio | S-curvas e colinas | 5 |
-| **Cidade** | Difícil | Curvas fechadas à noite | 4 |
+| **Deserto** | Fácil | Circuito rápido de retas longas ao entardecer | 5 |
+| **Litoral** | Médio | Circuito de S-curvas e colinas com vista para o mar | 5 |
+| **Cidade** | Difícil | Circuito noturno de curvas fechadas entre prédios | 4 |
 
-Cada pista é definida em dados (curva, colina, cenário, paleta) em `src/world/tracks.ts` — fácil de editar e expandir.
+Cada pista é definida em dados (curva, colina, cenário, paleta) em `src/world/tracks.ts` — fácil de editar e expandir. O minimapa é gerado a partir das próprias curvas: a soma de curvatura de cada volta é normalizada para 360° e o traçado é fechado, garantindo um circuito de verdade.
 
 ---
 
@@ -175,8 +177,9 @@ Baseado na técnica *outrun-style* de segmentos:
 1. A pista é um **array de ~1.200–1.500 segmentos**, cada um com `curve` e `hill` (y).
 2. A cada frame a câmera projeta os segmentos à frente (3D → 2D) e desenha do mais distante ao mais próximo, com **clipping por `maxy`** para esconder o que está atrás das colinas.
 3. Curvas são aplicadas acumulando deslocamento horizontal (`dx`) a cada segmento; colinas vêm da interpolação de `world.y`.
-4. Cenário e carros são desenhados numa segunda passada, de trás para frente, usando a escala projetada do segmento.
+4. Cenário e carros são desenhados numa segunda passada, de trás para frente, usando a escala projetada do segmento. Carros muito próximos têm o tamanho limitado em vez de sumir, para nunca "piscar" antes da colisão.
 5. A física usa a curvatura do segmento atual para gerar **força centrífuga** — quanto maior a velocidade e menor o grip, mais o carro é jogado para fora.
+6. O minimapa reaproveita o mapa top-down da pista (curvas integradas e fechadas em 360°) e usa a mesma transformação para o traçado, a linha de largada e os pontos dos carros.
 
 Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 
@@ -187,6 +190,3 @@ Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 Distribuído sob a licença do arquivo [LICENSE](./LICENSE).
 
 <p align="center">Feito com 🕹️ e pixel art.</p>
-
-.
-..
