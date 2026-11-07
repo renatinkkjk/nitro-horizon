@@ -49,6 +49,10 @@ export interface Racer {
   /** Está na área de boxes e o tanque está enchendo. */
   refueling: boolean;
   pitStops: number;
+  /** Serviço de pit já executado nesta passagem pela via de boxes. */
+  pitServed: boolean;
+  /** Ganhou +1 nitro neste frame (dispara o banner). */
+  nitroPit: boolean;
 }
 
 export type RacePhase = 'countdown' | 'racing' | 'finished';
@@ -126,6 +130,8 @@ export class Race {
         inPit: false,
         refueling: false,
         pitStops: 0,
+        pitServed: false,
+        nitroPit: false,
       };
 
       this.racers.push(racer);
@@ -233,10 +239,10 @@ export class Race {
     if (p.speed > top) p.speed = Math.max(top, p.speed - spec.maxSpeed * 1.25 * dt);
     if (p.speed < 0) p.speed = 0;
 
-    // Pit lane: limite de velocidade e reabastecimento na área de boxes.
-    const wasRefueling = p.refueling;
+    // Pit lane: limite de velocidade, reabastecimento e +1 nitro na área de boxes.
     p.inPit = false;
     p.refueling = false;
+    p.nitroPit = false;
     const pit = this.track.pit;
     if (pit) {
       const z = mod(p.distance, this.track.length);
@@ -248,17 +254,29 @@ export class Race {
           p.speed = Math.max(pitLimit, p.speed - spec.maxSpeed * 1.4 * dt);
         }
 
-        if (z >= pit.boxStart && z <= pit.boxEnd && p.fuel < spec.fuelCapacity) {
-          const before = p.fuel;
-          p.fuel = Math.min(spec.fuelCapacity, p.fuel + (spec.fuelCapacity / 2.2) * dt);
-          p.refueling = p.fuel > before + 0.0001;
-          if (p.refueling && !wasRefueling) {
+        if (z >= pit.boxStart && z <= pit.boxEnd) {
+          // O serviço acontece uma vez por passagem: +1 nitro e reabastecimento.
+          if (!p.pitServed && (p.fuel < spec.fuelCapacity || p.nitroLeft < spec.nitros)) {
+            p.pitServed = true;
             p.pitStops += 1;
+
+            if (p.nitroLeft < spec.nitros) {
+              p.nitroLeft = Math.min(spec.nitros, p.nitroLeft + 1);
+              p.nitroPit = true;
+            }
             this.audio.beep(720, 0.12, 'square', 0.09);
+          }
+
+          if (p.fuel < spec.fuelCapacity) {
+            const before = p.fuel;
+            p.fuel = Math.min(spec.fuelCapacity, p.fuel + (spec.fuelCapacity / 2.2) * dt);
+            p.refueling = p.fuel > before + 0.0001;
           }
         }
 
         if (p.offset > 1.56) p.offset = 1.56;
+      } else {
+        p.pitServed = false;
       }
     }
 
