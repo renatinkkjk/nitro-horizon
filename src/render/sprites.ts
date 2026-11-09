@@ -16,15 +16,19 @@ export interface CarDrawOptions {
   player?: boolean;
 }
 
-function poly(ctx: CanvasRenderingContext2D, points: Array<[number, number]>, color: string): void {
+function poly(ctx: CanvasRenderingContext2D, points: Array<[number, number]>, color: string, outlineColor?: string): void {
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(points[0][0], points[0][1]);
   for (let i = 1; i < points.length; i += 1) ctx.lineTo(points[i][0], points[i][1]);
   ctx.closePath();
   ctx.fill();
+  if (outlineColor) {
+    ctx.strokeStyle = outlineColor;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
 }
-
 /** Clareia (amount > 0) ou escurece (amount < 0) uma cor hexadecimal. */
 function shade(hex: string, amount: number): string {
   const clean = hex.replace('#', '');
@@ -108,6 +112,7 @@ export function drawCar(
       [half * 0.9, -h * 0.11],
     ],
     body,
+    '#000',
   );
 
   // vão escuro entre as rodas
@@ -228,10 +233,10 @@ export function drawCar(
   if (detail && style !== 'light') {
     ctx.globalAlpha = 0.92;
     if (style === 'muscle') {
-      poly(ctx, [[-half * 0.16, -h * 0.61], [-half * 0.06, -h * 0.61], [-half * 0.06, -h * 0.2], [-half * 0.16, -h * 0.2]], accent);
-      poly(ctx, [[half * 0.06, -h * 0.61], [half * 0.16, -h * 0.61], [half * 0.16, -h * 0.2], [half * 0.06, -h * 0.2]], accent);
+      poly(ctx, [[-half * 0.16, -h * 0.61], [-half * 0.06, -h * 0.61], [-half * 0.06, -h * 0.2], [-half * 0.16, -h * 0.2]], accent, '#000');
+      poly(ctx, [[half * 0.06, -h * 0.61], [half * 0.16, -h * 0.61], [half * 0.16, -h * 0.2], [half * 0.06, -h * 0.2]], accent, '#000');
     } else {
-      poly(ctx, [[-half * 0.08, -h * 0.61], [half * 0.08, -h * 0.61], [half * 0.08, -h * 0.2], [-half * 0.08, -h * 0.2]], accent);
+      poly(ctx, [[-half * 0.08, -h * 0.61], [half * 0.08, -h * 0.61], [half * 0.08, -h * 0.2], [-half * 0.08, -h * 0.2]], accent, '#000');
     }
     ctx.globalAlpha = 1;
   }
@@ -245,7 +250,7 @@ export function drawCar(
       [half * 0.42, -h * 0.9],
       [half * 0.5, -h * 0.62],
     ],
-    '#0d1524',
+    '#0d1524', '#000'
   );
   if (detail) {
     ctx.globalAlpha = 0.16;
@@ -361,6 +366,7 @@ export function drawCar(
     }
   }
 
+  ctx.strokeStyle = '#000';
   ctx.restore();
 }
 

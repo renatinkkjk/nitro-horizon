@@ -260,8 +260,8 @@ export class Race {
             p.pitServed = true;
             p.pitStops += 1;
 
-            if (p.nitroLeft < spec.nitros) {
-              p.nitroLeft = Math.min(spec.nitros, p.nitroLeft + 1);
+            if (true) {
+              p.nitroLeft = spec.nitros;
               p.nitroPit = true;
             }
             this.audio.beep(720, 0.12, 'square', 0.09);

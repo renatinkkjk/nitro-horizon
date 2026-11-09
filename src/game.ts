@@ -46,7 +46,7 @@ export class Game {
 
   private menuZ = 0;
   private time = 0;
-  private blink = true;
+  private blink = false;
   private blinkTimer = 0;
   private paused = false;
   private braking = false;
@@ -79,11 +79,6 @@ export class Game {
       last = now;
 
       this.time += dt;
-      this.blinkTimer += dt;
-      if (this.blinkTimer > 0.45) {
-        this.blinkTimer = 0;
-        this.blink = !this.blink;
-      }
 
       const input = this.input.poll();
       // Um erro num frame não pode matar o loop de requestAnimationFrame.
@@ -654,9 +649,9 @@ export class Game {
     drawCar(
       ctx,
       160 + player.steer * 8,
-      216,
-      64,
-      46,
+      216 - 2,
+      72,
+      52,
       { body: player.body, accent: player.accent, style: player.spec.style },
       {
         brake: this.braking,
