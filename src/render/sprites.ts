@@ -151,6 +151,7 @@ export function drawCar(
         [outerBottom, yBottom],
       ]),
       dark,
+      '#000',
     );
 
     // brilho na aresta superior da lateral
@@ -189,6 +190,7 @@ export function drawCar(
             [innerTop + half * 0.05, yTop + h * 0.2],
           ]),
           '#0d1524',
+          '#000',
         );
       }
 

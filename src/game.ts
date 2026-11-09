@@ -46,7 +46,8 @@ export class Game {
 
   private menuZ = 0;
   private time = 0;
-  private blink = false;
+  /** Prompts ficam sempre visíveis (sem piscar). */
+  private blink = true;
   private blinkTimer = 0;
   private paused = false;
   private braking = false;

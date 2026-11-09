@@ -33,14 +33,14 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Céu com gradiente, sol com halo, nuvens, estrelas e lua com crateras
 - [x] Cenário procedural por segmento (cactos, palmeiras, árvores, rochas, placas, postes, prédios, outdoors)
 - [x] **Circuitos fechados**: o traçado dá 360° por volta e o minimapa fecha o loop com linha de largada
-- [x] **Carros redesenhados** em 4 estilos (GT, muscle, light e turbo), com pintura em dois tons, vidro com reflexo, aerofólio, lanternas e escapamentos
+- [x] **Carros redesenhados** em 4 estilos (GT, muscle, light e turbo), com pintura em dois tons, vidro com reflexo, aerofólio, lanternas, escapamentos e **contornos pretos** no estilo pixel art
 - [x] **Carro em 3/4 ao esterçar**: ao virar, o sprite mostra a lateral do lado da curva, com roda dianteira, vidro e soleira — as IAs também inclinam nas trocas de faixa
 - [x] **Sem carros piscando**: a visibilidade dos carros agora usa o segmento realmente desenhado no frame, em vez da emenda do segmento
 - [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
 - [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
 - [x] Gasolina com consumo por RPM/nitro e modo reserva
-- [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens, reabastecimento com limite de velocidade e **+1 nitro por passagem**
+- [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens, reabastecimento com limite de velocidade e **nitro cheio por passagem**
 - [x] **Subidas e descidas** em todos os circuitos, com horizonte inclinando conforme o aclive/declive
 - [x] **Menu de pausa (ESC/P)**: continuar, reiniciar corrida, sair para o menu e espaço reservado para opções
 - [x] **Port mobile**: botões de toque para acelerar, frear, esterçar, nitro e pausa
@@ -99,7 +99,7 @@ Em todas as pistas o pit lane fica **na reta principal, à direita**:
 1. As placas amarelas **PIT** avisam a entrada com antecedência.
 2. Encoste para a direita e reduza: a via de boxes tem limite de ~100 km/h.
 3. Na área de boxes (garagens), o tanque enche em cerca de 2,2 s.
-4. Cada passagem pelos boxes também recarrega **+1 nitro** (até o máximo do carro).
+4. Cada passagem pelos boxes também **enche todos os nitros** (até o máximo do carro).
 5. O HUD mostra `PIT LANE` / `PIT STOP` e a porcentagem; o minimapa marca a entrada com um **P**.
 
 O aviso `COMBUSTÍVEL BAIXO` aparece quando o tanque cai abaixo de 20%. Se o combustível zerar, o carro entra em modo reserva — ainda dá para chegar ao pit.

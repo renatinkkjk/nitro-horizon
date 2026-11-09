@@ -239,7 +239,7 @@ export class Race {
     if (p.speed > top) p.speed = Math.max(top, p.speed - spec.maxSpeed * 1.25 * dt);
     if (p.speed < 0) p.speed = 0;
 
-    // Pit lane: limite de velocidade, reabastecimento e +1 nitro na área de boxes.
+    // Pit lane: limite de velocidade, reabastecimento e nitro cheio na área de boxes.
     p.inPit = false;
     p.refueling = false;
     p.nitroPit = false;
@@ -255,15 +255,13 @@ export class Race {
         }
 
         if (z >= pit.boxStart && z <= pit.boxEnd) {
-          // O serviço acontece uma vez por passagem: +1 nitro e reabastecimento.
+          // O serviço acontece uma vez por passagem: enche o tanque de nitro
+          // e reabastece o combustível.
           if (!p.pitServed && (p.fuel < spec.fuelCapacity || p.nitroLeft < spec.nitros)) {
             p.pitServed = true;
             p.pitStops += 1;
-
-            if (true) {
-              p.nitroLeft = spec.nitros;
-              p.nitroPit = true;
-            }
+            p.nitroLeft = spec.nitros;
+            p.nitroPit = true;
             this.audio.beep(720, 0.12, 'square', 0.09);
           }
 
