@@ -61,6 +61,8 @@ export interface Segment {
   looped: boolean;
   fog: number;
   clip: number;
+  /** O segmento foi realmente desenhado neste frame (não ficou atrás de um morro). */
+  drawn: boolean;
   /** 0 = sem pit lane; 0..1 = largura da via de boxes (com afunilamento). */
   pitLane: number;
 }
@@ -117,6 +119,7 @@ export function makeSegment(index: number, y1: number, y2: number, curve: number
     looped: false,
     fog: 1,
     clip: 0,
+    drawn: false,
     pitLane: 0,
   };
 }
@@ -367,6 +370,7 @@ export function renderRoad(
     segment.looped = segment.index < baseSegment.index;
     segment.fog = Math.exp(-FOG_DENSITY * Math.pow(n / DRAW_DISTANCE, 2) * 4);
     segment.clip = maxy;
+    segment.drawn = false;
 
     const segmentCamZ = camZ - (segment.looped ? trackLength : 0);
     project(segment.p1, cameraX - x, cameraY, segmentCamZ, width, height);
@@ -382,6 +386,7 @@ export function renderRoad(
     if (segment.p2.screen.y >= maxy) continue;
 
     renderSegment(ctx, width, segment, colors);
+    segment.drawn = true;
     maxy = segment.p2.screen.y;
   }
 

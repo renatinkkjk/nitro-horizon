@@ -566,7 +566,7 @@ export class Game {
       if (segment.sprites.length === 0) continue;
 
       const p = segment.p1.screen;
-      if (p.scale <= 0 || p.y < segment.clip) continue;
+      if (p.scale <= 0) continue;
 
       for (const sprite of segment.sprites) {
         const [worldW, worldH] = spriteWorldSize(sprite.kind, sprite.size);
@@ -619,7 +619,10 @@ export class Game {
       const cx = lerp(s1.x, s2.x, pct) + item.racer.offset * lerp(s1.w, s2.w, pct);
       const cy = lerp(s1.y, s2.y, pct);
 
-      if (cy < segment.clip - 1) continue;
+      // Segmento desenhado = carro sempre aparece. Só aplica o corte por
+      // crista quando o segmento ficou atrás de um morro (senão o carro
+      // piscava a cada emenda de segmento).
+      if (!segment.drawn && cy < segment.clip - 1) continue;
 
       const w = (scale * CAR_WORLD_WIDTH * WIDTH) / 2;
       const h = (scale * CAR_WORLD_HEIGHT * HEIGHT) / 2;
@@ -637,6 +640,8 @@ export class Game {
         body: item.racer.body,
         accent: item.racer.accent,
         style: item.racer.spec.style,
+      }, {
+        steer: clamp((item.racer.targetOffset - item.racer.offset) * 0.9, -0.4, 0.4),
       });
     }
   }
@@ -657,7 +662,7 @@ export class Game {
         brake: this.braking,
         nitro,
         player: true,
-        tilt: player.steer,
+        steer: player.steer,
       },
     );
   }
