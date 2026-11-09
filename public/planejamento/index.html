@@ -354,6 +354,10 @@
         <p>Port de toque com botões de acelerar, frear, esterçar, nitro e pausa. Os controles ficam abaixo do canvas e o layout se adapta a retrato e paisagem.</p>
       </div>
       <div class="card">
+        <div class="stat small">SPRITES EM 3/4</div>
+        <p>Ao esterçar, o carro do jogador passa para uma visão 3/4: cisalhamento do sprite, lateral com vidro, soleira e roda do lado da curva. As IAs inclinam de leve ao trocar de faixa.</p>
+      </div>
+      <div class="card">
         <div class="stat small">COLISÕES</div>
         <p>Fora da pista perde velocidade e vibra. Carro×carro usa AABB em (z, x) com empurrão lateral. Bater em cenário reduz forte, sem destruir.</p>
       </div>
@@ -479,6 +483,7 @@
           <tr><td>Sensação de velocidade fraca</td><td>FOV, linhas de velocidade, parallax em 3 camadas, tremor</td></tr>
           <tr><td>Performance</td><td>320×224 + sprites pré-escalados + culling → 60 fps</td></tr>
           <tr><td>Travamento na Cidade</td><td>Grade de janelas dos prédios limitada + loop protegido contra exceções</td></tr>
+          <tr><td>Carros piscando</td><td>Visibilidade usa o segmento realmente desenhado (flag <code>drawn</code>), não a emenda do segmento</td></tr>
           <tr><td>Direitos autorais</td><td>Arte, nomes e música 100% originais</td></tr>
         </tbody>
       </table>

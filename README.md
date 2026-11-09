@@ -24,7 +24,7 @@
 
 ---
 
-## ✅ Estado atual (v0.4 — menu de pausa, mobile e nitro no pit)
+## ✅ Estado atual (v0.5 — carros em 3/4 e correção da piscada)
 
 Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → pit stop → resultado**.
 
@@ -34,6 +34,8 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Cenário procedural por segmento (cactos, palmeiras, árvores, rochas, placas, postes, prédios, outdoors)
 - [x] **Circuitos fechados**: o traçado dá 360° por volta e o minimapa fecha o loop com linha de largada
 - [x] **Carros redesenhados** em 4 estilos (GT, muscle, light e turbo), com pintura em dois tons, vidro com reflexo, aerofólio, lanternas e escapamentos
+- [x] **Carro em 3/4 ao esterçar**: ao virar, o sprite mostra a lateral do lado da curva, com roda dianteira, vidro e soleira — as IAs também inclinam nas trocas de faixa
+- [x] **Sem carros piscando**: a visibilidade dos carros agora usa o segmento realmente desenhado no frame, em vez da emenda do segmento
 - [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
 - [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
@@ -211,6 +213,7 @@ Baseado na técnica *outrun-style* de segmentos:
 7. O pit lane é desenhado por segmento, com afunilamento na entrada/saída, separador tracejado e muro. Na física, a faixa direita da reta principal vira área de boxes: limite de velocidade e reabastecimento.
 8. As subidas/descidas vêm de `world.y` e a câmera acompanha o solo. Para reforçar a leitura, o horizonte (sol, montanhas e parallax) inclina conforme a inclinação da pista.
 9. O loop principal é protegido contra exceções: um erro em um frame não mata o `requestAnimationFrame` e, se persistir, o jogo volta ao título em vez de travar. As janelas dos prédios usam grade limitada para manter o custo de desenho baixo quando um prédio passa colado na câmera.
+10. A visibilidade dos carros usa a flag `segment.drawn`: o segmento só é considerado visível se a estrada dele foi realmente pintada no frame. Antes, o teste usava a borda próxima do segmento (`clip`), então o carro desaparecia no meio de cada segmento e reaparecia na emenda — a "piscada".
 
 Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 
