@@ -260,6 +260,10 @@ export function drawCar(
     }
   }
 
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(-half - 2, -h - 2, w + 4, h + 4);
+
   ctx.restore();
 }
 
