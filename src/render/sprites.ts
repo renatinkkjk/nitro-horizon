@@ -132,10 +132,10 @@ export function drawCar(
   if (detail && style !== 'light') {
     ctx.globalAlpha = 0.92;
     if (style === 'muscle') {
-      poly(ctx, [[-half * 0.16, -h * 0.61], [-half * 0.06, -h * 0.61], [-half * 0.06, -h * 0.2], [-half * 0.16, -h * 0.2]], accent);
-      poly(ctx, [[half * 0.06, -h * 0.61], [half * 0.16, -h * 0.61], [half * 0.16, -h * 0.2], [half * 0.06, -h * 0.2]], accent);
+      poly(ctx, [[-half * 0.16, -h * 0.61], [-half * 0.06, -h * 0.61], [-half * 0.06, -h * 0.2], [-half * 0.16, -h * 0.2]], accent, '#000');
+      poly(ctx, [[half * 0.06, -h * 0.61], [half * 0.16, -h * 0.61], [half * 0.16, -h * 0.2], [half * 0.06, -h * 0.2]], accent, '#000');
     } else {
-      poly(ctx, [[-half * 0.08, -h * 0.61], [half * 0.08, -h * 0.61], [half * 0.08, -h * 0.2], [-half * 0.08, -h * 0.2]], accent);
+      poly(ctx, [[-half * 0.08, -h * 0.61], [half * 0.08, -h * 0.61], [half * 0.08, -h * 0.2], [-half * 0.08, -h * 0.2]], accent, '#000');
     }
     ctx.globalAlpha = 1;
   }
@@ -149,7 +149,7 @@ export function drawCar(
       [half * 0.42, -h * 0.9],
       [half * 0.5, -h * 0.62],
     ],
-    '#0d1524',
+    '#0d1524', '#000'
   );
   if (detail) {
     ctx.globalAlpha = 0.16;
