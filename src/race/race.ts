@@ -214,7 +214,7 @@ export class Race {
     if (input.right) steer += 1;
     p.steer = lerp(p.steer, steer, Math.min(1, dt * 14));
     // Redução de velocidade ao virar: quanto maior o ângulo de giro, menor a velocidade máxima.
-    const steerFactor = Math.max(0, 1 - Math.abs(p.steer) * 0.1);
+    const steerFactor = Math.max(0, 1 - Math.abs(p.steer) * 0.05);
     const speedCap = spec.maxSpeed * steerFactor;
     if (p.speed > speedCap) p.speed = Math.max(speedCap, p.speed - spec.maxSpeed * 1.5 * dt);
     p.offset += steer * 2.6 * Math.max(0.12, speedFrac) * dt;
@@ -262,7 +262,7 @@ export class Race {
         if (z >= pit.boxStart && z <= pit.boxEnd) {
           // O serviço acontece uma vez por passagem: enche o tanque de nitro
           // e reabastece o combustível.
-          if (!p.pitServed && (p.fuel < spec.fuelCapacity || p.nitroLeft < spec.nitros)) {
+          if (!p.inPit && (p.fuel < spec.fuelCapacity * 0.25 || p.nitroLeft < spec.nitros * 0.5)) {
             p.pitServed = true;
             p.pitStops += 1;
             p.nitroLeft = spec.nitros;
@@ -317,7 +317,7 @@ export class Race {
       let target = r.spec.maxSpeed * (0.84 + r.skill * 0.15);
       // Redução de velocidade ao seguir curva/estrar: curvas fortes e muito esterço diminuem a velocidade alvo.
       const steerError = Math.abs(r.targetOffset - r.offset);
-      const steerFactor = Math.max(0, 1 - steerError * 0.5 - curveMag * 0.03);
+      const steerFactor = Math.max(0, 1 - steerError * 0.2 - curveMag * 0.01);
       target *= Math.min(1, steerFactor + 0.1);
 
       const gap = this.player.distance - r.distance;
