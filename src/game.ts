@@ -35,6 +35,18 @@ import { TRACKS } from './world/tracks';
 
 type GameState = 'title' | 'car' | 'track' | 'race' | 'results';
 
+interface SmokePuff {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  grow: number;
+  strength: number;
+}
+
 const WIDTH = 320;
 const HEIGHT = 224;
 const CAR_WORLD_WIDTH = 820;
@@ -68,6 +80,8 @@ export class Game {
   private pitch = 0;
   private pauseIndex = 0;
   private frameErrors = 0;
+  private smoke: SmokePuff[] = [];
+  private smokeTimer = 0;
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -184,6 +198,7 @@ export class Game {
         this.braking = input.brake;
         this.lookingBack = input.lookBack;
         race.update(dt, input);
+        this.updateTireSmoke(dt, race);
 
         this.bannerTimer = Math.max(0, this.bannerTimer - dt);
 
@@ -354,6 +369,8 @@ export class Game {
     this.fuelWarned = false;
     this.wasRefueling = false;
     this.wasNitroPit = false;
+    this.smoke = [];
+    this.smokeTimer = 0;
     this.state = 'race';
   }
 
@@ -426,6 +443,7 @@ export class Game {
 
     ctx.save();
     ctx.translate(sx, sy);
+    this.drawTireSmoke();
     this.drawPlayerCar(race, lookBack);
     this.drawSpeedFx(race);
     ctx.restore();
@@ -664,7 +682,82 @@ export class Game {
         body: item.racer.body,
         accent: item.racer.accent,
         style: item.racer.spec.style,
+      }, {
+        lean: clamp((item.racer.targetOffset - item.racer.offset) * 0.9, -0.4, 0.4) * 0.085,
       });
+    }
+  }
+
+  /** Emite e atualiza a fumaça dos pneus: pequena ao andar, maior nas curvas. */
+  private updateTireSmoke(dt: number, race: Race): void {
+    this.updateSmokeParticles(dt);
+
+    const player = race.player;
+    const speedFrac = clamp(player.speed / player.spec.maxSpeed, 0, 1);
+    if (speedFrac < 0.045) return;
+
+    const index =
+      Math.floor(mod(player.distance, race.track.length) / SEGMENT_LENGTH) %
+      race.track.segments.length;
+    const curve = race.track.segments[index].curve;
+    const curveNorm = Math.min(1, Math.abs(curve) / 3.5);
+    const drift = Math.max(curveNorm, Math.abs(player.steer) * 0.75);
+    const strength = clamp(0.16 + speedFrac * 0.34 + drift * 0.85, 0, 1);
+    const turnDir = curve !== 0 ? Math.sign(curve) : Math.sign(player.steer);
+
+    // Frequência de emissão: baixa no reto, alta em curvas fortes.
+    this.smokeTimer += dt * (5 + 27 * strength);
+    while (this.smokeTimer >= 1) {
+      this.smokeTimer -= 1;
+      this.spawnSmokePuff(strength, turnDir);
+    }
+  }
+
+  private spawnSmokePuff(strength: number, turnDir: number): void {
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const outward = 6 + 10 * strength;
+    // A fumaça escorrega para fora da curva.
+    const push = -turnDir * (10 + 24 * strength);
+    this.smoke.push({
+      x: 160 + side * (30 + Math.random() * 4),
+      y: 211 + Math.random() * 4,
+      vx: side * outward * (0.5 + Math.random()) + push + (Math.random() - 0.5) * 6,
+      vy: -(3 + 10 * strength) - Math.random() * 5,
+      life: 0,
+      maxLife: 0.45 + Math.random() * 0.35 + strength * 0.25,
+      size: 1 + Math.floor(Math.random() * (strength > 0.7 ? 2 : 1)),
+      grow: 0.6 + strength * 1.6,
+      strength,
+    });
+  }
+
+  private updateSmokeParticles(dt: number): void {
+    const alive: SmokePuff[] = [];
+    for (const puff of this.smoke) {
+      puff.life += dt;
+      if (puff.life >= puff.maxLife) continue;
+      puff.x += puff.vx * dt;
+      puff.y += puff.vy * dt;
+      puff.vx *= Math.max(0, 1 - dt * 1.6);
+      puff.vy *= Math.max(0, 1 - dt * 1.1);
+      alive.push(puff);
+    }
+    this.smoke = alive;
+  }
+
+  private drawTireSmoke(): void {
+    const ctx = this.ctx;
+    for (const puff of this.smoke) {
+      const t = puff.life / puff.maxLife;
+      const alpha = Math.max(0, (1 - t) * (0.18 + 0.32 * puff.strength));
+      const size = Math.max(1, Math.round(puff.size + puff.grow * t));
+      ctx.fillStyle = `rgba(224, 228, 236, ${alpha.toFixed(3)})`;
+      ctx.fillRect(
+        Math.round(puff.x - size / 2),
+        Math.round(puff.y - size / 2),
+        size,
+        size,
+      );
     }
   }
 
@@ -684,6 +777,7 @@ export class Game {
         brake: this.braking,
         nitro,
         player: true,
+        lean: player.steer * 0.085 * Math.min(1, player.speed / 1600),
         view: lookBack ? 'front' : 'rear',
       },
     );

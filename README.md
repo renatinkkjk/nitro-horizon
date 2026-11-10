@@ -24,7 +24,7 @@
 
 ---
 
-## ✅ Estado atual (v0.7 — sprites do RX-7 e olhar para trás)
+## ✅ Estado atual (v0.8 — sprites do RX-7, olhar para trás, inclinação e fumaça)
 
 Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → pit stop → resultado**.
 
@@ -37,6 +37,8 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] **Mazda RX-7 (FD)** com sprites em pixel art fornecidos no repositório de assets: vistas traseira e frontal em `src/assets/rx7-*.png`
 - [x] **Showroom na seleção de carro**: prévia grande com o sprite frontal do RX-7, perfil, atributos e faixa com os quatro modelos
 - [x] **Olhar para trás (R)**: segurar `R` espelha a pista e mostra a frente do carro; o sprite não muda mais ao esterçar
+- [x] **Inclinação lateral**: jogador e IAs tombam suavemente ao esterçar, girando o sprite ao redor da base sem trocá-lo
+- [x] **Fumaça dos pneus**: partículas discretas ao andar, que ficam maiores e mais frequentes nas curvas fortes e escorrem para fora da curva
 - [x] **Sem carros piscando**: a visibilidade dos carros agora usa o segmento realmente desenhado no frame, em vez da emenda do segmento
 - [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
@@ -231,6 +233,8 @@ Baseado na técnica *outrun-style* de segmentos:
 8. As subidas/descidas vêm de `world.y` e a câmera acompanha o solo. Para reforçar a leitura, o horizonte (sol, montanhas e parallax) inclina conforme a inclinação da pista.
 9. O loop principal é protegido contra exceções: um erro em um frame não mata o `requestAnimationFrame` e, se persistir, o jogo volta ao título em vez de travar. As janelas dos prédios usam grade limitada para manter o custo de desenho baixo quando um prédio passa colado na câmera.
 10. A visibilidade dos carros usa a flag `segment.drawn`: o segmento só é considerado visível se a estrada dele foi realmente pintada no frame. Antes, o teste usava a borda próxima do segmento (`clip`), então o carro desaparecia no meio de cada segmento e reaparecia na emenda — a "piscada".
+11. A inclinação lateral é só uma rotação (`ctx.rotate`) ao redor da base do sprite: o ângulo vem do esterço (jogador) ou da troca de faixa (IA), sem cisalhamento e sem trocar de vista.
+12. A fumaça é um conjunto de partículas emitidas atrás das rodas. A taxa cresce com a velocidade, com a curvatura do segmento e com o esterço; cada partícula nasce pequena, cresce e some, sendo empurrada para fora da curva.
 
 Detalhes de projeção e constantes em `src/render/pseudo3d.ts`.
 

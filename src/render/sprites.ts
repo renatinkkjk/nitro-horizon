@@ -12,6 +12,8 @@ export interface CarPaint {
 export interface CarDrawOptions {
   brake?: boolean;
   nitro?: boolean;
+  /** Inclinação lateral em radianos, aplicada ao redor da base do carro. */
+  lean?: number;
   /** Vista específica para carros com sprites dedicados (RX-7). */
   view?: Rx7View;
   player?: boolean;
@@ -62,6 +64,7 @@ export function drawCar(
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(baseY));
+  if (opts.lean) ctx.rotate(opts.lean);
 
   // sombra no asfalto
   ctx.fillStyle = 'rgba(0,0,0,0.42)';

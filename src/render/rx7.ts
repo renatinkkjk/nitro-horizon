@@ -54,11 +54,11 @@ export function drawRx7(
   const scale = Math.min(w / REF_WIDTH, h / REF_HEIGHT);
   const dw = Math.max(1, Math.round(image.naturalWidth * scale));
   const dh = Math.max(1, Math.round(image.naturalHeight * scale));
-  const dx = Math.round(cx - dw / 2);
-  const dy = Math.round(baseY - dh);
 
   ctx.save();
+  ctx.translate(Math.round(cx), Math.round(baseY));
+  if (opts.lean) ctx.rotate(opts.lean);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(image, dx, dy, dw, dh);
+  ctx.drawImage(image, Math.round(-dw / 2), -dh, dw, dh);
   ctx.restore();
 }
