@@ -82,6 +82,9 @@ export class Game {
   private frameErrors = 0;
   private smoke: SmokePuff[] = [];
   private smokeTimer = 0;
+  private exhaustTimer = 0;
+  private exhaustParticles: { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number }[] = [];
+  // Hill system removado: groundAt retorna 0 (pista plana), pitch sempre 0.
 
   constructor(ctx: CanvasRenderingContext2D) {
     this.ctx = ctx;
@@ -199,6 +202,7 @@ export class Game {
         this.lookingBack = input.lookBack;
         race.update(dt, input);
         this.updateTireSmoke(dt, race);
+        this.updateExhaust(dt, race);
 
         this.bannerTimer = Math.max(0, this.bannerTimer - dt);
 
@@ -446,6 +450,7 @@ export class Game {
     this.drawTireSmoke();
     this.drawPlayerCar(race, lookBack);
     this.drawSpeedFx(race);
+    this.drawExhaust();
     ctx.restore();
 
     drawHud(ctx, this.buildHud(race));
@@ -459,10 +464,8 @@ export class Game {
   }
 
   private groundAt(track: Track, distance: number): number {
-    const index = Math.floor(mod(distance, track.length) / SEGMENT_LENGTH) % track.segments.length;
-    const segment = track.segments[index];
-    const pct = mod(distance, SEGMENT_LENGTH) / SEGMENT_LENGTH;
-    return lerp(segment.p1.world.y, segment.p2.world.y, pct);
+    // Hill system removado: retorna 0 (pista sempre plana).
+    return 0;
   }
 
   private renderWorld(
@@ -477,20 +480,16 @@ export class Game {
     const theme = track.theme;
     const night = track.id === 'cidade';
 
-    // Inclinação do horizonte conforme o aclive/declive na direção da câmera.
-    const dir = lookBack ? -1 : 1;
-    const ahead = this.groundAt(track, cameraZ + 1400 * dir);
-    const behind = this.groundAt(track, cameraZ - 1400 * dir);
-    const slope = (ahead - behind) / 2800;
-    this.pitch = clamp(slope * 900, -17, 17);
+    // Hill system removado: pitch sempre 0 (pista plana).
+    this.pitch = 0;
 
-    // céu, sol/lua, estrelas e nuvens
-    this.drawSky(theme, night, cameraZ, cameraX, this.pitch);
+    // céu (sem pitch/aglutinação de hill).
+    this.drawSky(theme, night, cameraZ, cameraX, 0);
 
-    // parallax
+    // parallax (sem ajuste de pitch).
     const offset = cameraZ * 0.00035 + cameraX * 0.02;
-    this.drawMountains(112 + this.pitch, 42, theme.parallaxFar, offset, 150);
-    this.drawMountains(116 + this.pitch * 0.8, 26, theme.parallaxNear, offset * 1.8, 92);
+    this.drawMountains(112, 42, theme.parallaxFar, offset, 150);
+    this.drawMountains(116, 26, theme.parallaxNear, offset * 1.8, 92);
 
     // estrada
     const visible = renderRoad(
@@ -523,65 +522,6 @@ export class Game {
     gradient.addColorStop(1, theme.skyBottom);
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-    const cx = WIDTH * 0.72;
-    const cy = (night ? 54 : 58) + pitch;
-
-    // halo do sol / lua
-    const halo = ctx.createRadialGradient(cx, cy, 2, cx, cy, night ? 46 : 56);
-    halo.addColorStop(0, night ? 'rgba(200,212,255,0.4)' : 'rgba(255,226,150,0.55)');
-    halo.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = halo;
-    ctx.fillRect(cx - 64, cy - 64, 128, 128);
-
-    if (night) {
-      // estrelas com cintilância e leve parallax
-      for (let i = 0; i < 54; i += 1) {
-        const px = mod(i * 73 + cameraX * 0.004, WIDTH);
-        const py = clamp(4 + ((i * 37) % 96) + pitch * 0.6, 2, 104);
-        const twinkle = 0.35 + 0.65 * Math.abs(Math.sin(i * 1.7 + this.time * 1.4));
-        ctx.globalAlpha = twinkle * 0.85;
-        ctx.fillStyle = i % 9 === 0 ? '#ffd8a8' : '#dfe8ff';
-        ctx.fillRect(Math.round(px), Math.round(py), i % 7 === 0 ? 2 : 1, 1);
-      }
-      ctx.globalAlpha = 1;
-
-      // lua com crateras
-      ctx.fillStyle = '#eef0ff';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 15, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(158,168,210,0.35)';
-      ctx.beginPath();
-      ctx.arc(cx - 5, cy - 4, 3, 0, Math.PI * 2);
-      ctx.arc(cx + 4, cy + 3, 2, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      // sol
-      ctx.fillStyle = theme.horizon;
-      ctx.beginPath();
-      ctx.arc(cx, cy, 20, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.32)';
-      ctx.beginPath();
-      ctx.arc(cx, cy, 13, 0, Math.PI * 2);
-      ctx.fill();
-
-      // nuvens suaves
-      const drift = mod(cameraZ * 0.0008 + this.time * 1.4, 420);
-      for (let i = 0; i < 3; i += 1) {
-        const cloudX = mod(i * 140 + 340 - drift, 480) - 80;
-        const cloudY = 34 + i * 17 + pitch * 0.5;
-        ctx.globalAlpha = 0.12;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.ellipse(cloudX, cloudY, 34, 7, 0, 0, Math.PI * 2);
-        ctx.ellipse(cloudX + 22, cloudY + 2, 22, 5, 0, 0, Math.PI * 2);
-        ctx.ellipse(cloudX - 20, cloudY + 3, 18, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-    }
   }
 
   private drawMountains(baseY: number, height: number, color: string, offset: number, period: number): void {
@@ -763,6 +703,63 @@ export class Game {
       alive.push(puff);
     }
     this.smoke = alive;
+  }
+
+  private updateExhaust(dt: number, race: Race): void {
+    const player = race.player;
+    const isRx7 = player.spec.style === 'rx7';
+    const nitroActive = player.nitroTimer > 0;
+
+    // Limpa partículas antigas
+    this.exhaustParticles = this.exhaustParticles.filter((p) => p.life < p.maxLife);
+
+    if (nitroActive && isRx7) {
+      // Emite partículas do escapamento do RX-7
+      this.exhaustTimer += dt;
+      const emitRate = 8; // partículas por frame quando nitro ativo
+      while (this.exhaustTimer >= (1 / emitRate)) {
+        this.exhaustTimer -= 1 / emitRate;
+        const exhaustY = 216 + 26; // posição traseira do carro (baseY + altura/2)
+        const exhaustX = 160; // centro do carro
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 2;
+        this.exhaustParticles.push({
+          x: exhaustX,
+          y: exhaustY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1,
+          life: 0,
+          maxLife: 0.6 + Math.random() * 0.4,
+          size: 1 + Math.random() * 2,
+        });
+      }
+    }
+
+    // Atualiza partículas
+    for (const puff of this.exhaustParticles) {
+      puff.life += dt;
+      if (puff.life >= puff.maxLife) continue;
+      puff.x += puff.vx * dt;
+      puff.y += puff.vy * dt;
+      puff.vy += dt * 1.5; // gravidade para baixo
+    }
+  }
+
+  private drawExhaust(): void {
+    const ctx = this.ctx;
+    if (this.exhaustParticles.length === 0) return;
+    for (const puff of this.exhaustParticles) {
+      const t = puff.life / puff.maxLife;
+      const alpha = 1 - t;
+      const size = Math.max(1, puff.size * (1 - t));
+      ctx.fillStyle = `rgba(200, 200, 200, ${alpha * 0.8})`;
+      ctx.fillRect(
+        Math.round(puff.x - size / 2),
+        Math.round(puff.y - size / 2),
+        size,
+        size * 3,
+      );
+    }
   }
 
   private drawTireSmoke(): void {

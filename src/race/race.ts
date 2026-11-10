@@ -80,17 +80,18 @@ export class Race {
     this.audio = audio;
 
     const lanes = [-0.55, 0, 0.55];
-    const playerGrid = 12;
+    const playerGrid = 14; // última fileira, lado direito
 
     for (let i = 0; i < 15; i += 1) {
       const isPlayer = i === playerGrid;
       const spec = isPlayer ? playerSpec : CAR_SPECS[i % CAR_SPECS.length];
       const palette = isPlayer
         ? { body: playerSpec.body, accent: playerSpec.accent }
-        : AI_COLORS[(i + 3) % AI_COLORS.length];
+        : AI_COLORS[(i + 5) % AI_COLORS.length];
 
       const row = Math.floor(i / 3);
-      const distance = -row * 430;
+      const adjustedRow = 4 - row;
+      const distance = -adjustedRow * 400;
 
       const racer: Racer = {
         id: i,
@@ -212,6 +213,10 @@ export class Race {
     if (input.left) steer -= 1;
     if (input.right) steer += 1;
     p.steer = lerp(p.steer, steer, Math.min(1, dt * 14));
+    // Redução de velocidade ao virar: quanto maior o ângulo de giro, menor a velocidade máxima.
+    const steerFactor = Math.max(0, 1 - Math.abs(p.steer) * 0.3);
+    const speedCap = spec.maxSpeed * steerFactor;
+    if (p.speed > speedCap) p.speed = Math.max(speedCap, p.speed - spec.maxSpeed * 1.5 * dt);
     p.offset += steer * 2.6 * Math.max(0.12, speedFrac) * dt;
 
     p.offset -= segment.curve * speedFrac * (0.3 + (1 - spec.grip) * 0.24) * dt;
@@ -310,7 +315,10 @@ export class Race {
       const curveMag = Math.abs(here.curve) * 0.55 + Math.abs(ahead.curve) * 0.45;
 
       let target = r.spec.maxSpeed * (0.84 + r.skill * 0.15);
-      target *= 1 - Math.min(0.22, curveMag * 0.032);
+      // Redução de velocidade ao seguir curva/estrar: curvas fortes e muito esterço diminuem a velocidade alvo.
+      const steerError = Math.abs(r.targetOffset - r.offset);
+      const steerFactor = Math.max(0, 1 - steerError * 0.5 - curveMag * 0.03);
+      target *= Math.min(1, steerFactor + 0.1);
 
       const gap = this.player.distance - r.distance;
       if (gap > 1200) target *= 1.06;
