@@ -30,7 +30,7 @@ export const CAR_SPECS: CarSpec[] = [
     id: 'rx7',
     name: 'MAZDA RX-7',
     tagline: 'Rotativo equilibrado — o all-rounder.',
-    body: '#f0f2f6',
+    body: '#ffd900',
     accent: '#ff2d55',
     style: 'rx7',
     maxSpeed: 11800,

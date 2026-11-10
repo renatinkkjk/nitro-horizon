@@ -57,7 +57,7 @@ export function drawTitleScreen(ctx: CanvasRenderingContext2D, blink: boolean): 
 
   ctx.font = '6px monospace';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('SETAS = DIRIGIR   ESPAÇO = NITRO', 160, 196);
+  ctx.fillText('SETAS = DIRIGIR   ESPAÇO = NITRO   R = OLHAR PARA TRÁS', 160, 196);
   ctx.fillText('SHIFT / CTRL = MARCHA   P = PAUSA   F = TELA CHEIA', 160, 206);
   ctx.fillStyle = '#3dff8b';
   ctx.fillText('PIT STOP: ENTRE À DIREITA NA RETA PRINCIPAL', 160, 218);
@@ -76,7 +76,7 @@ export function drawCarSelectScreen(
 
   const car = cars[index];
 
-  // Painel-esquerdo: showroom com o carro grande em 3/4.
+  // Painel-esquerdo: showroom com o carro grande.
   panel(ctx, 8, 32, 174, 102, 0.94);
   ctx.save();
   ctx.beginPath();
@@ -109,8 +109,8 @@ export function drawCarSelectScreen(
 
   const preview =
     car.style === 'rx7'
-      ? { steer: 0.78, view: 'rearQuarter' as const }
-      : { steer: 0.45 };
+      ? { view: 'front' as const }
+      : {};
   drawCar(ctx, 95, 121, 124, 70, { body: car.body, accent: car.accent, style: car.style }, preview);
   ctx.restore();
 
@@ -167,6 +167,7 @@ export function drawCarSelectScreen(
       body: item.body,
       accent: item.accent,
       style: item.style,
+      ...(item.style === 'rx7' ? { view: 'rear' as const } : {}),
     });
 
     ctx.font = 'bold 6px monospace';

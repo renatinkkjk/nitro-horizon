@@ -5,7 +5,7 @@
 > 🎮 **Jogar:** https://renatinkkjk.github.io/nitro-horizon/
 > 📋 **Planejamento / game design:** https://renatinkkjk.github.io/nitro-horizon/planejamento/
 
-> ⚠️ Projeto **inspirado** no estilo de Top Gear. Nomes, sprites, músicas e pistas são 100% originais — nenhum asset da Nintendo/Kemco é utilizado.
+> ⚠️ Projeto **inspirado** no estilo de Top Gear. Nomes, músicas e pistas são originais; o Mazda RX-7 usa sprites em pixel art fornecidos pelo autor. Nenhum asset da Nintendo/Kemco é utilizado.
 
 ---
 
@@ -24,7 +24,7 @@
 
 ---
 
-## ✅ Estado atual (v0.6 — showroom, tela cheia e RX-7)
+## ✅ Estado atual (v0.7 — sprites do RX-7 e olhar para trás)
 
 Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → pit stop → resultado**.
 
@@ -34,9 +34,9 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Cenário procedural por segmento (cactos, palmeiras, árvores, rochas, placas, postes, prédios, outdoors)
 - [x] **Circuitos fechados**: o traçado dá 360° por volta e o minimapa fecha o loop com linha de largada
 - [x] **Carros redesenhados** com pintura em dois tons, vidro com reflexo, aerofólio, lanternas, escapamentos e **contornos pretos** no estilo pixel art
-- [x] **Mazda RX-7 (FD)** com renderizador dedicado em `src/render/rx7.ts` e 5 vistas: traseira, 3/4 traseira, lateral, frente e 3/4 dianteira (arte em refinamento)
-- [x] **Showroom na seleção de carro**: prévia grande em 3/4, perfil, atributos e faixa com os quatro modelos
-- [x] **Carro em 3/4 ao esterçar**: ao virar, o sprite mostra a lateral do lado da curva — as IAs também inclinam nas trocas de faixa
+- [x] **Mazda RX-7 (FD)** com sprites em pixel art fornecidos no repositório de assets: vistas traseira e frontal em `src/assets/rx7-*.png`
+- [x] **Showroom na seleção de carro**: prévia grande com o sprite frontal do RX-7, perfil, atributos e faixa com os quatro modelos
+- [x] **Olhar para trás (R)**: segurar `R` espelha a pista e mostra a frente do carro; o sprite não muda mais ao esterçar
 - [x] **Sem carros piscando**: a visibilidade dos carros agora usa o segmento realmente desenhado no frame, em vez da emenda do segmento
 - [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
@@ -46,7 +46,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] **Subidas e descidas** em todos os circuitos, com horizonte inclinando conforme o aclive/declive
 - [x] **Menu de pausa (ESC/P)**: continuar, reiniciar corrida, sair para o menu e **tela cheia**
 - [x] **Tela cheia no PC e no celular**: tecla `F`, opção no menu de pausa e botão de toque `⛶` no mobile; aviso amigável quando o navegador não suporta
-- [x] **Port mobile**: botões de toque para acelerar, frear, esterçar, nitro, pausa e tela cheia
+- [x] **Port mobile**: botões de toque para acelerar, frear, esterçar, nitro, olhar para trás (RÉ), pausa e tela cheia
 - [x] 14 IAs competitivas, com alvo de velocidade por curva, troca de faixa e rubber-band
 - [x] Colisões carro×carro (empurrão lateral + perda de velocidade)
 - [x] Voltas, melhor volta, posição e classificação em tempo real, com banner de "última volta"
@@ -64,7 +64,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [ ] Clima / variação de horário
 - [ ] Editor de pista e fantasmas de melhor volta
 - [ ] Opções de volume, dificuldade e assistências
-- [ ] Refinar a arte do RX-7 com novas referências
+- [ ] Aplicar os sprites fornecidos aos demais modelos (Trovão V8, Vespa RS e Titã Turbo)
 
 ---
 
@@ -76,6 +76,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 | Frear | `↓` / `S` |
 | Virar | `←` `→` / `A` `D` |
 | Nitro | `Espaço` |
+| Olhar para trás | `R` (segurar) |
 | Subir marcha | `Shift` / `E` |
 | Descer marcha | `Ctrl` / `Q` |
 | Confirmar | `Enter` |
@@ -98,6 +99,7 @@ Em celulares e tablets os controles de toque aparecem automaticamente abaixo do 
 - **◀ ▶** — esterçar
 - **GÁS** / **FREIO** — acelerar e frear (câmbio automático)
 - **N₂O** — nitro
+- **RÉ** — olhar para trás (mostra a frente do carro)
 - **II** — pausa / voltar
 - **⛶** — tela cheia (no iPhone, use Compartilhar → Adicionar à Tela de Início)
 - **OK** — confirmar no menu
@@ -122,12 +124,12 @@ O aviso `COMBUSTÍVEL BAIXO` aparece quando o tanque cai abaixo de 20%. Se o com
 
 | Modelo | Perfil | Estilo | Nitros | Tanque | Grip |
 |---|---|---|---|---|---|
-| **Mazda RX-7** | Equilibrado | RX-7 (sprite dedicado em 5 vistas) | 3 | 96 | Alto |
+| **Mazda RX-7** | Equilibrado | Sprite fornecido (frente/traseira) | 3 | 96 | Alto |
 | **Trovão V8** | Velocista | Muscle (faixas duplas) | 2 | 112 | Baixo |
 | **Vespa RS** | Ágil / leve | Light (barra de luz) | 3 | 74 | Máximo |
 | **Titã Turbo** | Nitro agressivo | Turbo (asa grande) | 4 | 80 | Baixo |
 
-As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leves de skill (0,84–1,02), o que gera um grid variado sem parecer trapaça. As IAs de RX-7 reaproveitam o mesmo renderizador dedicado com as cores da paleta de oponentes.
+As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leves de skill (0,84–1,02), o que gera um grid variado sem parecer trapaça. As IAs de RX-7 continuam com a arte procedural colorida até receberem sprites próprios.
 
 ---
 
@@ -196,7 +198,7 @@ nitro-horizon/
 │   ├── render/
 │   │   ├── pseudo3d.ts       # projeção, segmentos, curvas, colinas, estrada
 │   │   ├── sprites.ts        # carros genéricos e cenário desenhados por código
-│   │   ├── rx7.ts            # sprite dedicado do Mazda RX-7 (5 vistas)
+│   │   ├── rx7.ts            # RX-7 com sprites fornecidos (frente/traseira)
 │   │   ├── color.ts          # utilitário de clarear/escurecer cores
 │   │   └── hud.ts            # HUD, minimapa, barras e formatação de tempo
 │   ├── world/

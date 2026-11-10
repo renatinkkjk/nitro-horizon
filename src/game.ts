@@ -56,6 +56,7 @@ export class Game {
   private blink = true;
   private paused = false;
   private braking = false;
+  private lookingBack = false;
 
   private bannerText = '';
   private bannerSub = '';
@@ -152,6 +153,7 @@ export class Game {
 
         // Menu de pausa (ESC / P)
         if (this.paused) {
+          this.lookingBack = false;
           if (input.backPressed || input.pausePressed) {
             this.paused = false;
             this.audio.beep(520, 0.05, 'square', 0.08);
@@ -172,6 +174,7 @@ export class Game {
 
         if (input.pausePressed || input.backPressed) {
           this.paused = true;
+          this.lookingBack = false;
           this.pauseIndex = 0;
           this.audio.silenceEngine();
           this.audio.beep(520, 0.05, 'square', 0.08);
@@ -179,6 +182,7 @@ export class Game {
         }
 
         this.braking = input.brake;
+        this.lookingBack = input.lookBack;
         race.update(dt, input);
 
         this.bannerTimer = Math.max(0, this.bannerTimer - dt);
@@ -237,6 +241,7 @@ export class Game {
       }
 
       case 'results': {
+        this.lookingBack = false;
         if (input.confirmPressed || input.backPressed) {
           this.audio.beep(440, 0.08);
           this.race = null;
@@ -407,10 +412,21 @@ export class Game {
     const camX = player.offset * ROAD_WIDTH;
     const camY = this.groundAt(track, camZ) + CAMERA_HEIGHT;
 
+    // Segurar R olha para trás: espelha a pista e mostra a frente do carro.
+    const lookBack = this.lookingBack && !this.paused;
+
     ctx.save();
     ctx.translate(sx, sy);
+    if (lookBack) {
+      ctx.translate(WIDTH, 0);
+      ctx.scale(-1, 1);
+    }
     this.renderWorld(track, camZ, camX, camY, race.racers);
-    this.drawPlayerCar(race);
+    ctx.restore();
+
+    ctx.save();
+    ctx.translate(sx, sy);
+    this.drawPlayerCar(race, lookBack);
     this.drawSpeedFx(race);
     ctx.restore();
 
@@ -648,20 +664,18 @@ export class Game {
         body: item.racer.body,
         accent: item.racer.accent,
         style: item.racer.spec.style,
-      }, {
-        steer: clamp((item.racer.targetOffset - item.racer.offset) * 0.9, -0.4, 0.4),
       });
     }
   }
 
-  private drawPlayerCar(race: Race): void {
+  private drawPlayerCar(race: Race, lookBack: boolean): void {
     const ctx = this.ctx;
     const player = race.player;
     const nitro = player.nitroTimer > 0;
 
     drawCar(
       ctx,
-      160 + player.steer * 8,
+      160,
       216 - 2,
       72,
       52,
@@ -670,7 +684,7 @@ export class Game {
         brake: this.braking,
         nitro,
         player: true,
-        steer: player.steer,
+        view: lookBack ? 'front' : 'rear',
       },
     );
   }

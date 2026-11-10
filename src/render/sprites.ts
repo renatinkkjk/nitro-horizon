@@ -12,9 +12,6 @@ export interface CarPaint {
 export interface CarDrawOptions {
   brake?: boolean;
   nitro?: boolean;
-  tilt?: number;
-  /** -1 (esquerda) a 1 (direita): mostra o carro em 3/4, com a lateral do lado da curva. */
-  steer?: number;
   /** Vista específica para carros com sprites dedicados (RX-7). */
   view?: Rx7View;
   player?: boolean;
@@ -45,18 +42,15 @@ export function drawCar(
 ): void {
   if (w < 2 || h < 2) return;
 
-  // Carros com sprite dedicado (RX-7) usam o renderizador por vistas.
-  if (paint.style === 'rx7') {
+  // O RX-7 do jogador (e o showroom) usa os sprites fornecidos; as IAs de RX-7
+  // continuam com a arte procedural colorida até receberem sprites próprios.
+  if (paint.style === 'rx7' && opts.view) {
     drawRx7(ctx, cx, baseY, w, h, paint, opts);
     return;
   }
 
   const half = w / 2;
   const style = paint.style ?? 'gt';
-  const tilt = opts.tilt ?? 0;
-  const steer = Math.max(-1, Math.min(1, opts.steer ?? 0));
-  const turn = Math.abs(steer);
-  const side = steer >= 0 ? 1 : -1;
   const detail = w >= 16 && h >= 13;
 
   const body = paint.body;
@@ -68,13 +62,6 @@ export function drawCar(
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(baseY));
-  if (tilt !== 0) ctx.rotate(tilt * 0.055);
-  // Cisalhamento horizontal: o topo (frente) acompanha a direção da curva,
-  // dando a leitura de carro em 3/4 em vez de apenas inclinado.
-  if (steer !== 0) {
-    ctx.scale(1 + 0.06 * turn, 1);
-    ctx.transform(1, 0, -steer * 0.24, 1, 0, 0);
-  }
 
   // sombra no asfalto
   ctx.fillStyle = 'rgba(0,0,0,0.42)';
@@ -128,98 +115,6 @@ export function drawCar(
     ],
     dark,
   );
-
-  // lateral visível na curva (visão 3/4)
-  if (turn > 0.02) {
-    const yTop = -h * 0.64;
-    const yBottom = -h * 0.13;
-    const innerTop = half * 0.6;
-    const innerBottom = half * 0.8;
-    const outerTop = half * (0.94 + 0.14 * turn);
-    const outerBottom = half * (1.08 + 0.42 * turn);
-    const mirror = (points: Array<[number, number]>): Array<[number, number]> =>
-      side > 0 ? points : points.map(([x, y]) => [-x, y] as [number, number]);
-
-    poly(
-      ctx,
-      mirror([
-        [innerBottom, yBottom],
-        [innerTop, yTop],
-        [outerTop, yTop],
-        [outerBottom, yBottom],
-      ]),
-      dark,
-      '#000',
-    );
-
-    // brilho na aresta superior da lateral
-    poly(
-      ctx,
-      mirror([
-        [innerTop, yTop],
-        [outerTop, yTop],
-        [outerTop - half * 0.02, yTop + Math.max(1, h * 0.025)],
-        [innerTop, yTop + Math.max(1, h * 0.025)],
-      ]),
-      light,
-    );
-
-    if (detail) {
-      // soleira / saia lateral com a cor de destaque
-      poly(
-        ctx,
-        mirror([
-          [innerBottom, yBottom],
-          [outerBottom, yBottom],
-          [outerBottom - half * 0.03, yBottom + h * 0.035],
-          [innerBottom + half * 0.02, yBottom + h * 0.035],
-        ]),
-        accent,
-      );
-
-      // vidro lateral
-      if (turn > 0.22) {
-        poly(
-          ctx,
-          mirror([
-            [innerTop + half * 0.06, yTop + h * 0.04],
-            [outerTop - half * 0.06, yTop + h * 0.02],
-            [outerTop - half * 0.03, yTop + h * 0.17],
-            [innerTop + half * 0.05, yTop + h * 0.2],
-          ]),
-          '#0d1524',
-          '#000',
-        );
-      }
-
-      // linha da porta
-      ctx.strokeStyle = deeper;
-      ctx.lineWidth = Math.max(1, w * 0.014);
-      ctx.beginPath();
-      ctx.moveTo(side * half * 0.74, -h * 0.52);
-      ctx.lineTo(side * half * 0.96, -h * 0.18);
-      ctx.stroke();
-
-      // roda traseira do lado de fora, encaixada na lateral
-      const outerWheelW = Math.max(1, half * 0.19);
-      const outerWheelH = h * 0.25;
-      const outerWheelX = half * (1.02 + 0.34 * turn);
-      ctx.fillStyle = '#0c0c13';
-      ctx.fillRect(
-        side > 0 ? outerWheelX - outerWheelW * 0.5 : -outerWheelX - outerWheelW * 0.5,
-        -outerWheelH,
-        outerWheelW,
-        outerWheelH,
-      );
-      ctx.fillStyle = '#39405a';
-      ctx.fillRect(
-        side > 0 ? outerWheelX - outerWheelW * 0.22 : -outerWheelX - outerWheelW * 0.22,
-        -outerWheelH * 0.7,
-        Math.max(1, outerWheelW * 0.44),
-        Math.max(1, outerWheelH * 0.34),
-      );
-    }
-  }
 
   // brilho no ombro e no teto
   if (detail) {

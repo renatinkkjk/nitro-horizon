@@ -126,6 +126,20 @@
       pointer-events: auto;
       z-index: 11;
     }
+    .tbtn.lookback {
+      position: fixed;
+      top: calc(50% - 19px); right: 10px;
+      width: 46px; height: 38px;
+      font-size: 11px;
+      color: #ffd23f;
+      border-color: #6e5a24;
+      pointer-events: auto;
+      z-index: 11;
+    }
+    .tbtn.lookback.active {
+      background: rgba(255, 210, 63, 0.25);
+      border-color: #ffd23f;
+    }
     .tbtn.fullscreen {
       position: fixed;
       top: 54px; right: 10px;
@@ -157,7 +171,7 @@
   <div id="app">
     <canvas id="game" width="320" height="224" aria-label="Nitro Horizon"></canvas>
   </div>
-  <div id="hint">SETAS / WASD · ESPAÇO = NITRO · SHIFT/CTRL = MARCHA · ESC = PAUSA · F = TELA CHEIA</div>
+  <div id="hint">SETAS / WASD · ESPAÇO = NITRO · R = OLHAR PARA TRÁS · SHIFT/CTRL = MARCHA · ESC = PAUSA · F = TELA CHEIA</div>
   <div id="toast" role="status" aria-live="polite"></div>
   <div id="touch">
     <div class="tgroup">
@@ -169,6 +183,7 @@
       <button class="tbtn brake" data-code="ArrowDown" aria-label="Frear">FREIO</button>
       <button class="tbtn gas" data-code="ArrowUp" aria-label="Acelerar">GÁS</button>
     </div>
+    <button class="tbtn lookback" data-code="KeyR" aria-label="Olhar para trás">RÉ</button>
     <button class="tbtn fullscreen" data-action="fullscreen" aria-label="Tela cheia">⛶</button>
     <button class="tbtn pause" data-code="Escape" aria-label="Pausar">II</button>
     <button class="tbtn ok" data-code="Enter" aria-label="Confirmar">OK</button>

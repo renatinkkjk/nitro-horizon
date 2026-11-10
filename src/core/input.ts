@@ -4,6 +4,7 @@ export interface InputState {
   throttle: boolean;
   brake: boolean;
   nitro: boolean;
+  lookBack: boolean;
   shiftUp: boolean;
   shiftDown: boolean;
   up: boolean;
@@ -81,6 +82,7 @@ export class Input {
       throttle: has('ArrowUp', 'KeyW'),
       brake: has('ArrowDown', 'KeyS'),
       nitro: has('Space'),
+      lookBack: has('KeyR'),
       shiftUp: has('ShiftLeft', 'ShiftRight', 'KeyE'),
       shiftDown: has('ControlLeft', 'ControlRight', 'KeyQ'),
       up: has('ArrowUp', 'KeyW'),
