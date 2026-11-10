@@ -438,7 +438,7 @@ export class Game {
       ctx.translate(WIDTH, 0);
       ctx.scale(-1, 1);
     }
-    this.renderWorld(track, camZ, camX, camY, race.racers);
+    this.renderWorld(track, camZ, camX, camY, race.racers, lookBack);
     ctx.restore();
 
     ctx.save();
@@ -471,14 +471,16 @@ export class Game {
     cameraX: number,
     cameraY: number,
     racers: Racer[] | null,
+    lookBack = false,
   ): void {
     const ctx = this.ctx;
     const theme = track.theme;
     const night = track.id === 'cidade';
 
-    // Inclinação do horizonte conforme o aclive/declive da pista.
-    const ahead = this.groundAt(track, cameraZ + 1400);
-    const behind = this.groundAt(track, cameraZ - 1400);
+    // Inclinação do horizonte conforme o aclive/declive na direção da câmera.
+    const dir = lookBack ? -1 : 1;
+    const ahead = this.groundAt(track, cameraZ + 1400 * dir);
+    const behind = this.groundAt(track, cameraZ - 1400 * dir);
     const slope = (ahead - behind) / 2800;
     this.pitch = clamp(slope * 900, -17, 17);
 
@@ -501,10 +503,11 @@ export class Game {
       WIDTH,
       HEIGHT,
       theme.colors,
+      lookBack,
     );
 
-    this.drawSceneryLayer(visible, night);
-    if (racers) this.drawRacersLayer(track, visible, racers, cameraZ);
+    this.drawSceneryLayer(visible, night, lookBack);
+    if (racers) this.drawRacersLayer(track, visible, racers, cameraZ, lookBack);
   }
 
   private drawSky(
@@ -601,13 +604,14 @@ export class Game {
     ctx.fill();
   }
 
-  private drawSceneryLayer(visible: Segment[], night: boolean): void {
+  private drawSceneryLayer(visible: Segment[], night: boolean, lookBack: boolean): void {
     const ctx = this.ctx;
     for (let i = visible.length - 1; i >= 0; i -= 1) {
       const segment = visible[i];
       if (segment.sprites.length === 0) continue;
 
-      const p = segment.p1.screen;
+      // Na visão traseira p2 é a borda mais próxima do segmento.
+      const p = lookBack ? segment.p2.screen : segment.p1.screen;
       if (p.scale <= 0) continue;
 
       for (const sprite of segment.sprites) {
@@ -624,12 +628,21 @@ export class Game {
     }
   }
 
-  private drawRacersLayer(track: Track, visible: Segment[], racers: Racer[], cameraZ: number): void {
+  private drawRacersLayer(
+    track: Track,
+    visible: Segment[],
+    racers: Racer[],
+    cameraZ: number,
+    lookBack: boolean,
+  ): void {
     const ctx = this.ctx;
     const player = this.race?.player;
 
     const visibleIndex = new Map<number, number>();
     visible.forEach((segment, index) => visibleIndex.set(segment.index, index));
+
+    const baseIndex =
+      Math.floor(mod(cameraZ, track.length) / SEGMENT_LENGTH) % track.segments.length;
 
     const list: Array<{ visible: number; racer: Racer; pct: number }> = [];
 
@@ -637,12 +650,18 @@ export class Game {
       if (racer === player) continue;
 
       const z = mod(racer.distance, track.length);
+      // Olhando para trás, interessa quem está atrás da câmera (e vice-versa).
+      const gap = lookBack
+        ? mod(cameraZ - racer.distance, track.length)
+        : mod(racer.distance - cameraZ, track.length);
       // Só descarta quem está atrás da câmera ou além da distância de desenho.
       // (Antes, carros próximos sumiam e ainda colidiam com o jogador.)
-      const gap = mod(racer.distance - cameraZ, track.length);
       if (gap < 30 || gap > DRAW_DISTANCE * SEGMENT_LENGTH) continue;
 
       const index = Math.floor(z / SEGMENT_LENGTH) % track.segments.length;
+      // O trecho parcial mais próximo não é desenhado na visão traseira.
+      if (lookBack && index === baseIndex) continue;
+
       const visiblePosition = visibleIndex.get(index);
       if (visiblePosition === undefined) continue;
       list.push({ visible: visiblePosition, racer, pct: (z % SEGMENT_LENGTH) / SEGMENT_LENGTH });
@@ -652,11 +671,12 @@ export class Game {
 
     for (const item of list) {
       const segment = visible[item.visible];
-      const s1 = segment.p1.screen;
-      const s2 = segment.p2.screen;
+      const s1 = lookBack ? segment.p2.screen : segment.p1.screen;
+      const s2 = lookBack ? segment.p1.screen : segment.p2.screen;
       if (s1.scale <= 0) continue;
 
-      const pct = item.pct;
+      // Na visão traseira a fração do segmento corre no sentido contrário.
+      const pct = lookBack ? 1 - item.pct : item.pct;
       const scale = lerp(s1.scale, s2.scale, pct);
       const cx = lerp(s1.x, s2.x, pct) + item.racer.offset * lerp(s1.w, s2.w, pct);
       const cy = lerp(s1.y, s2.y, pct);

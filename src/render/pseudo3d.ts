@@ -213,11 +213,13 @@ function paintStartLine(
 function renderSegment(
   ctx: CanvasRenderingContext2D,
   width: number,
+  near: ScreenPoint,
+  far: ScreenPoint,
   segment: Segment,
   colors: ColorSet,
 ): void {
-  const p1 = segment.p1.screen;
-  const p2 = segment.p2.screen;
+  const p1 = near;
+  const p2 = far;
   if (p1.y <= p2.y) return;
 
   const dark = segment.dark;
@@ -351,6 +353,7 @@ export function renderRoad(
   width: number,
   height: number,
   colors: ColorSet,
+  lookBack = false,
 ): Segment[] {
   const count = segments.length;
   // A câmera é normalizada dentro da volta: no começo da corrida a posição
@@ -360,34 +363,83 @@ export function renderRoad(
   const basePercent = mod(camZ, SEGMENT_LENGTH) / SEGMENT_LENGTH;
   const baseSegment = segments[baseIndex];
 
-  let maxy = height;
-  let x = 0;
-  let dx = -(baseSegment.curve * basePercent);
   const visible: Segment[] = [];
+  let maxy = height;
 
-  for (let n = 0; n < DRAW_DISTANCE; n++) {
-    const segment = segments[(baseIndex + n) % count];
-    segment.looped = segment.index < baseSegment.index;
-    segment.fog = Math.exp(-FOG_DENSITY * Math.pow(n / DRAW_DISTANCE, 2) * 4);
+  if (!lookBack) {
+    let x = 0;
+    let dx = -(baseSegment.curve * basePercent);
+
+    for (let n = 0; n < DRAW_DISTANCE; n++) {
+      const segment = segments[(baseIndex + n) % count];
+      segment.looped = segment.index < baseSegment.index;
+      segment.fog = Math.exp(-FOG_DENSITY * Math.pow(n / DRAW_DISTANCE, 2) * 4);
+      segment.clip = maxy;
+      segment.drawn = false;
+
+      const segmentCamZ = camZ - (segment.looped ? trackLength : 0);
+      project(segment.p1, cameraX - x, cameraY, segmentCamZ, width, height);
+      project(segment.p2, cameraX - x - dx, cameraY, segmentCamZ, width, height);
+
+      x += dx;
+      dx += segment.curve;
+
+      visible.push(segment);
+
+      if (segment.p1.camera.z <= CAMERA_DEPTH) continue;
+      if (segment.p2.screen.y >= segment.p1.screen.y) continue;
+      if (segment.p2.screen.y >= maxy) continue;
+
+      renderSegment(ctx, width, segment.p1.screen, segment.p2.screen, segment, colors);
+      segment.drawn = true;
+      maxy = segment.p2.screen.y;
+    }
+
+    return visible;
+  }
+
+  // Olhar para trás: percorre os segmentos no sentido inverso (o que está
+  // atrás da câmera), com a curvatura negada. O espelhamento horizontal do
+  // canvas (feito no game) completa a rotação de 180° do ponto de vista.
+  // O primeiro trecho parcial (até a borda do segmento base) não é desenhado,
+  // mas entra no acumulador de deslocamento.
+  let x = 0;
+  let dx = baseSegment.curve * (1 - basePercent);
+  x += dx;
+  dx -= baseSegment.curve;
+
+  for (let n = 1; n < DRAW_DISTANCE; n++) {
+    const segment = segments[(baseIndex - n + count) % count];
+    const wrapped = segment.p1.world.z > camZ;
+    const camZadj = camZ + (wrapped ? trackLength : 0);
+
+    // Em ordem inversa, p2 é a borda mais próxima e p1 a mais distante.
+    const nearCamZ = 2 * segment.p2.world.z - camZadj;
+    const farCamZ = 2 * segment.p1.world.z - camZadj;
+    project(segment.p2, cameraX - x, cameraY, nearCamZ, width, height);
+    project(segment.p1, cameraX - x - dx, cameraY, farCamZ, width, height);
+
+    const near = segment.p2.screen;
+    const far = segment.p1.screen;
+
+    segment.looped = wrapped;
+    segment.fog = Math.exp(-FOG_DENSITY * Math.pow((n - 1) / DRAW_DISTANCE, 2) * 4);
     segment.clip = maxy;
     segment.drawn = false;
 
-    const segmentCamZ = camZ - (segment.looped ? trackLength : 0);
-    project(segment.p1, cameraX - x, cameraY, segmentCamZ, width, height);
-    project(segment.p2, cameraX - x - dx, cameraY, segmentCamZ, width, height);
-
     x += dx;
-    dx += segment.curve;
+    dx -= segment.curve;
 
     visible.push(segment);
 
-    if (segment.p1.camera.z <= CAMERA_DEPTH) continue;
-    if (segment.p2.screen.y >= segment.p1.screen.y) continue;
-    if (segment.p2.screen.y >= maxy) continue;
+    if (near.scale <= 0) continue;
+    if (segment.p2.camera.z <= CAMERA_DEPTH) continue;
+    if (far.y >= near.y) continue;
+    if (far.y >= maxy) continue;
 
-    renderSegment(ctx, width, segment, colors);
+    renderSegment(ctx, width, near, far, segment, colors);
     segment.drawn = true;
-    maxy = segment.p2.screen.y;
+    maxy = far.y;
   }
 
   return visible;

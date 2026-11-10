@@ -36,7 +36,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] **Carros redesenhados** com pintura em dois tons, vidro com reflexo, aerofólio, lanternas, escapamentos e **contornos pretos** no estilo pixel art
 - [x] **Mazda RX-7 (FD)** com sprites em pixel art fornecidos no repositório de assets: vistas traseira e frontal em `src/assets/rx7-*.png`
 - [x] **Showroom na seleção de carro**: prévia grande com o sprite frontal do RX-7, perfil, atributos e faixa com os quatro modelos
-- [x] **Olhar para trás (R)**: segurar `R` espelha a pista e mostra a frente do carro; o sprite não muda mais ao esterçar
+- [x] **Olhar para trás (R)**: segurar `R` muda a câmera para a visão traseira; a pista e os oponentes são mostrados invertidos (curvas invertidas, direção do tráfego), para que o jogador veja o que está atrás dele — inclui sprites dos carros atrás. O sprite do jogador muda para frontal (RX-7) ou mantém a vista traseira.
 - [x] **Inclinação lateral**: jogador e IAs tombam suavemente ao esterçar, girando o sprite ao redor da base sem trocá-lo
 - [x] **Fumaça dos pneus**: partículas discretas ao andar, que ficam maiores e mais frequentes nas curvas fortes e escorrem para fora da curva
 - [x] **Sem carros piscando**: a visibilidade dos carros agora usa o segmento realmente desenhado no frame, em vez da emenda do segmento
@@ -78,7 +78,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 | Frear | `↓` / `S` |
 | Virar | `←` `→` / `A` `D` |
 | Nitro | `Espaço` |
-| Olhar para trás | `R` (segurar) |
+| Olhar para trás | `R` (segurar) | Muda a câmera para visão traseira; a pista curva ao contrário e os oponentes atrás aparecem.
 | Subir marcha | `Shift` / `E` |
 | Descer marcha | `Ctrl` / `Q` |
 | Confirmar | `Enter` |
@@ -101,7 +101,7 @@ Em celulares e tablets os controles de toque aparecem automaticamente abaixo do 
 - **◀ ▶** — esterçar
 - **GÁS** / **FREIO** — acelerar e frear (câmbio automático)
 - **N₂O** — nitro
-- **RÉ** — olhar para trás (mostra a frente do carro)
+- **RÉ** — olhar para trás (mostra a frente do carro na vista do jogador, mas na visão traseira real a pista e os oponentes são mostrados atrás com curvatura invertida).
 - **II** — pausa / voltar
 - **⛶** — tela cheia (no iPhone, use Compartilhar → Adicionar à Tela de Início)
 - **OK** — confirmar no menu
