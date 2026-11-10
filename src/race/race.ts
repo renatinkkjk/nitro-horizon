@@ -91,8 +91,8 @@ export class Race {
         : AI_COLORS[(i + 5) % AI_COLORS.length];
 
       const row = Math.floor(i / 3);
-      const adjustedRow = 4 - row;
-      const distance = -adjustedRow * 400;
+      // Fileira 0 é a da frente; o jogador (i=14, fileira 4) larga por último.
+      const distance = -row * 400;
 
       const racer: Racer = {
         id: i,

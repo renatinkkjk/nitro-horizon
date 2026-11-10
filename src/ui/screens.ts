@@ -41,26 +41,79 @@ function wrapText(ctx: CanvasRenderingContext2D, value: string, maxWidth: number
   return lines;
 }
 
-export function drawTitleScreen(ctx: CanvasRenderingContext2D, blink: boolean): void {
+/** Opções do menu principal. */
+export const MAIN_MENU_OPTIONS = [
+  'CORRIDA RÁPIDA',
+  'MODO HISTÓRIA · 3 CORRIDAS',
+  'COMO JOGAR',
+] as const;
+
+export const MAIN_MENU_COUNT = MAIN_MENU_OPTIONS.length;
+
+export function drawTitleScreen(
+  ctx: CanvasRenderingContext2D,
+  menuIndex: number,
+  blink: boolean,
+): void {
   ctx.fillStyle = 'rgba(5,6,12,0.55)';
   ctx.fillRect(0, 0, 320, 224);
 
-  title(ctx, 'NITRO', 78, 38, '#ff3d7f');
-  title(ctx, 'HORIZON', 118, 38, '#22e0ff');
+  title(ctx, 'NITRO', 56, 34, '#ff3d7f');
+  title(ctx, 'HORIZON', 92, 34, '#22e0ff');
 
-  ctx.font = 'bold 7px monospace';
+  ctx.font = 'bold 6px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#8b93bd';
-  ctx.fillText('CORRIDA ARCADE PIXEL ART', 160, 140);
+  ctx.fillText('CORRIDA ARCADE PIXEL ART', 160, 110);
 
-  if (blink) title(ctx, 'PRESSIONE ENTER', 178, 11, '#ffd23f');
+  panel(ctx, 64, 118, 192, 78, 0.74);
+
+  MAIN_MENU_OPTIONS.forEach((label, i) => {
+    const y = 136 + i * 22;
+    const selected = i === menuIndex;
+    if (selected) {
+      ctx.fillStyle = 'rgba(34,224,255,0.16)';
+      ctx.fillRect(70, y - 11, 180, 16);
+      if (blink) text(ctx, '▶', 76, y, 8, '#22e0ff');
+    }
+    text(ctx, label, 160, y, 8, selected ? '#ffffff' : '#b8c2e8', 'center');
+  });
 
   ctx.font = '6px monospace';
+  ctx.textAlign = 'center';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('SETAS = DIRIGIR   ESPAÇO = NITRO   R = OLHAR PARA TRÁS', 160, 196);
-  ctx.fillText('SHIFT / CTRL = MARCHA   P = PAUSA   F = TELA CHEIA', 160, 206);
-  ctx.fillStyle = '#3dff8b';
-  ctx.fillText('PIT STOP: ENTRE À DIREITA NA RETA PRINCIPAL', 160, 218);
+  ctx.fillText('↑ ↓ NAVEGAR · ENTER CONFIRMAR · F TELA CHEIA', 160, 212);
+}
+
+export function drawHelpScreen(ctx: CanvasRenderingContext2D, blink: boolean): void {
+  ctx.fillStyle = 'rgba(5,6,12,0.86)';
+  ctx.fillRect(0, 0, 320, 224);
+
+  panel(ctx, 12, 18, 296, 184, 0.92);
+  title(ctx, 'COMO JOGAR', 38, 12, '#22e0ff');
+
+  const lines: Array<[string, string]> = [
+    ['DIRIGIR', 'SETAS / WASD'],
+    ['ACELERAR · FREAR', '↑ / ↓  OU  W / S'],
+    ['NITRO', 'ESPAÇO (TURBO DE 2,4 S)'],
+    ['OLHAR PARA TRÁS', 'R'],
+    ['MARCHAS', 'SHIFT / E SOBE · CTRL / Q DESCE'],
+    ['PAUSA · TELA CHEIA', 'ESC / P  ·  F'],
+    ['PIT STOP', 'ENTRE À DIREITA NA RETA PRINCIPAL'],
+    ['', 'REABASTECE E RECARREGA O NITRO.'],
+    ['DRAFTING', 'COLE ATRÁS DE UM RIVAL PARA'],
+    ['', 'GANHAR VELOCIDADE EXTRA.'],
+    ['MODO HISTÓRIA', 'VENCE AS 3 CORRIDAS E SE TORNA'],
+    ['', 'CAMPEÃO DO HORIZONTE.'],
+  ];
+
+  lines.forEach(([label, value], i) => {
+    const y = 58 + i * 11;
+    if (label) text(ctx, label, 24, y, 6, '#ffd23f');
+    text(ctx, value, 148, y, 6, '#c8d0e0', 'left', false);
+  });
+
+  if (blink) text(ctx, 'ENTER / ESC PARA VOLTAR', 160, 212, 7, '#ffd23f', 'center');
 }
 
 export function drawCarSelectScreen(
@@ -68,11 +121,12 @@ export function drawCarSelectScreen(
   cars: CarSpec[],
   index: number,
   blink: boolean,
+  story = false,
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.68)';
   ctx.fillRect(0, 0, 320, 224);
 
-  title(ctx, 'ESCOLHA SEU CARRO', 24, 11, '#ffd23f');
+  title(ctx, story ? 'MODO HISTÓRIA · ESCOLHA O CARRO' : 'ESCOLHA SEU CARRO', 24, story ? 9 : 11, '#ffd23f');
 
   const car = cars[index];
 
@@ -176,6 +230,10 @@ export function drawCarSelectScreen(
     ctx.fillText(item.name, x + cardW / 2, y + h - 5);
   });
 
+  if (story) {
+    text(ctx, 'DESERTO → LITORAL → CIDADE', 160, 202, 6, '#8b93bd', 'center', false);
+  }
+
   if (blink) {
     text(ctx, '◀ ▶ TROCAR · ENTER CONFIRMAR · F TELA CHEIA', 160, 214, 6, '#ffd23f', 'center');
   }
@@ -259,11 +317,26 @@ export function drawCountdown(ctx: CanvasRenderingContext2D, value: number): voi
   ctx.fillText(label, 160, 119);
 }
 
-export function drawResultsScreen(ctx: CanvasRenderingContext2D, race: Race, blink: boolean): void {
+export interface ResultsScreenOptions {
+  story?: boolean;
+  round?: number;
+  totalRounds?: number;
+  pointsGained?: number;
+}
+
+export function drawResultsScreen(
+  ctx: CanvasRenderingContext2D,
+  race: Race,
+  blink: boolean,
+  options: ResultsScreenOptions = {},
+): void {
   ctx.fillStyle = 'rgba(5,6,12,0.84)';
   ctx.fillRect(0, 0, 320, 224);
 
-  title(ctx, 'RESULTADO FINAL', 28, 12, '#ffd23f');
+  const heading = options.story
+    ? `RODADA ${options.round ?? 1}/${options.totalRounds ?? 3} · ${race.track.name}`
+    : 'RESULTADO FINAL';
+  title(ctx, heading, 28, options.story ? 10 : 12, '#ffd23f');
 
   const standings = race.standings.slice(0, 9);
   const startY = 44;
@@ -294,9 +367,128 @@ export function drawResultsScreen(ctx: CanvasRenderingContext2D, race: Race, bli
   });
 
   text(ctx, `MELHOR VOLTA: ${formatTime(race.player.bestLap)}`, 10, 196, 8, '#ffd23f');
-  text(ctx, `PISTA: ${race.track.name}`, 310, 196, 7, '#8b93bd', 'right');
+  if (options.story) {
+    if (options.pointsGained !== undefined) {
+      text(ctx, `+${options.pointsGained} PONTOS`, 160, 196, 8, '#3dff8b', 'center');
+    }
+    text(ctx, `PISTA: ${race.track.name}`, 310, 196, 7, '#8b93bd', 'right');
+  } else {
+    text(ctx, `PISTA: ${race.track.name}`, 310, 196, 7, '#8b93bd', 'right');
+  }
 
-  if (blink) text(ctx, 'ENTER PARA VOLTAR AO MENU', 160, 214, 7, '#e8ecff', 'center');
+  if (blink) {
+    text(
+      ctx,
+      options.story ? 'ENTER PARA CONTINUAR' : 'ENTER PARA VOLTAR AO MENU',
+      160,
+      214,
+      7,
+      '#e8ecff',
+      'center',
+    );
+  }
+}
+
+export interface StoryRow {
+  name: string;
+  points: number;
+  isPlayer: boolean;
+}
+
+export interface StoryScreenData {
+  complete: boolean;
+  round: number;
+  totalRounds: number;
+  nextTrack: string;
+  rows: StoryRow[];
+  playerPosition: number;
+  totalRacers: number;
+  champion: boolean;
+  results: Array<{ track: string; position: number }>;
+}
+
+/**
+ * Tela intermediária do modo história: classificação do campeonato entre as
+ * corridas e, no final, o resultado da temporada.
+ */
+export function drawStoryScreen(
+  ctx: CanvasRenderingContext2D,
+  data: StoryScreenData,
+  blink: boolean,
+): void {
+  ctx.fillStyle = 'rgba(5,6,12,0.8)';
+  ctx.fillRect(0, 0, 320, 224);
+
+  if (data.complete) {
+    title(
+      ctx,
+      data.champion ? 'CAMPEÃO DO HORIZONTE' : 'HISTÓRIA CONCLUÍDA',
+      24,
+      data.champion ? 12 : 11,
+      data.champion ? '#3dff8b' : '#ffd23f',
+    );
+    text(
+      ctx,
+      `VOCÊ TERMINOU EM ${data.playerPosition}º DE ${data.totalRacers}`,
+      160,
+      40,
+      8,
+      '#ffffff',
+      'center',
+    );
+    const summary = data.results
+      .map((result) => `${result.track.slice(0, 3)} ${result.position}º`)
+      .join(' · ');
+    if (summary) text(ctx, summary, 160, 52, 6, '#8b93bd', 'center', false);
+  } else {
+    title(ctx, 'MODO HISTÓRIA', 24, 12, '#ffd23f');
+    text(ctx, `RODADA ${data.round}/${data.totalRounds}`, 160, 40, 9, '#ffffff', 'center');
+    text(ctx, data.nextTrack, 160, 52, 7, '#22e0ff', 'center');
+  }
+
+  const headerY = 68;
+  panel(ctx, 18, 58, 284, 142, 0.62);
+  ctx.font = 'bold 6px monospace';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = '#4a5480';
+  ctx.fillText('POS', 28, headerY);
+  ctx.fillText('PILOTO', 58, headerY);
+  ctx.textAlign = 'right';
+  ctx.fillText('PONTOS', 292, headerY);
+
+  const maxRows = 10;
+  const display = data.rows.slice(0, maxRows).map((row, i) => ({ row, pos: i + 1 }));
+  const playerIndex = data.rows.findIndex((row) => row.isPlayer);
+  if (playerIndex >= maxRows) {
+    display[display.length - 1] = { row: data.rows[playerIndex], pos: playerIndex + 1 };
+  }
+
+  display.forEach(({ row, pos }, i) => {
+    const y = headerY + 13 + i * 12;
+    if (row.isPlayer) {
+      ctx.fillStyle = 'rgba(34,224,255,0.14)';
+      ctx.fillRect(16, y - 9, 288, 12);
+    }
+    const medal = pos === 1 ? '#ffd23f' : pos === 2 ? '#c8d4e8' : pos === 3 ? '#e0955a' : null;
+    const color = row.isPlayer ? '#22e0ff' : medal ?? '#c8d0e0';
+    text(ctx, `${pos}`, 28, y, 8, medal ?? color);
+    text(ctx, row.name, 58, y, 8, color);
+    if (row.isPlayer) text(ctx, '◀ VOCÊ', 108, y, 6, '#22e0ff');
+    text(ctx, `${row.points}`, 292, y, 8, color, 'right');
+  });
+
+  if (blink) {
+    text(
+      ctx,
+      data.complete ? 'ENTER PARA VOLTAR AO MENU' : 'ENTER PARA LARGAR · ESC PARA SAIR',
+      160,
+      212,
+      7,
+      '#ffd23f',
+      'center',
+    );
+  }
 }
 
 export interface PauseOption {

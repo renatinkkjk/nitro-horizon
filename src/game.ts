@@ -16,14 +16,19 @@ import {
 } from './render/pseudo3d';
 import { drawCar, drawScenery, spriteWorldSize } from './render/sprites';
 import {
+  MAIN_MENU_COUNT,
   PAUSE_OPTION_COUNT,
   drawCarSelectScreen,
   drawCountdown,
+  drawHelpScreen,
   drawPauseScreen,
   drawResultsScreen,
+  drawStoryScreen,
   drawTitleScreen,
   drawTrackSelectScreen,
   pauseOptions,
+  type StoryRow,
+  type StoryScreenData,
 } from './ui/screens';
 import {
   isFullscreen,
@@ -33,7 +38,10 @@ import {
 import type { Track } from './world/track';
 import { TRACKS } from './world/tracks';
 
-type GameState = 'title' | 'car' | 'track' | 'race' | 'results';
+type GameState = 'title' | 'help' | 'car' | 'track' | 'race' | 'results' | 'story' | 'storyEnd';
+
+/** Pontuação do campeonato do modo história (1º ao 10º). */
+const STORY_POINTS = [15, 12, 10, 8, 6, 5, 4, 3, 2, 1];
 
 interface SmokePuff {
   x: number;
@@ -58,9 +66,20 @@ export class Game {
   private readonly audio = new AudioEngine();
 
   private state: GameState = 'title';
+  private menuIndex = 0;
   private carIndex = 0;
   private trackIndex = 0;
   private race: Race | null = null;
+
+  // --- Modo história: campeonato de 3 corridas ---
+  private storyActive = false;
+  private storyRound = 0;
+  private storyPlayerId = 14;
+  private storyBannerPending = false;
+  private readonly storyPoints = new Map<number, number>();
+  private readonly storyPosSum = new Map<number, number>();
+  private readonly storyNames = new Map<number, string>();
+  private storyResults: Array<{ track: string; position: number }> = [];
 
   private menuZ = 0;
   private time = 0;
@@ -135,10 +154,35 @@ export class Game {
     switch (this.state) {
       case 'title': {
         this.menuZ += dt * 3400;
+        if (input.upPressed || input.leftPressed) {
+          this.menuIndex = (this.menuIndex + MAIN_MENU_COUNT - 1) % MAIN_MENU_COUNT;
+          this.audio.beep(480, 0.04, 'square', 0.06);
+        }
+        if (input.downPressed || input.rightPressed) {
+          this.menuIndex = (this.menuIndex + 1) % MAIN_MENU_COUNT;
+          this.audio.beep(480, 0.04, 'square', 0.06);
+        }
         if (input.confirmPressed) {
           this.audio.init();
           this.audio.beep(660, 0.08);
-          this.state = 'car';
+          if (this.menuIndex === 0) {
+            this.storyActive = false;
+            this.state = 'car';
+          } else if (this.menuIndex === 1) {
+            this.resetStory();
+            this.state = 'car';
+          } else {
+            this.state = 'help';
+          }
+        }
+        break;
+      }
+
+      case 'help': {
+        this.menuZ += dt * 2200;
+        if (input.confirmPressed || input.backPressed) {
+          this.audio.beep(440, 0.08);
+          this.state = 'title';
         }
         break;
       }
@@ -149,9 +193,13 @@ export class Game {
         if (input.rightPressed) this.changeCar(1);
         if (input.confirmPressed) {
           this.audio.beep(660, 0.08);
-          this.state = 'track';
+          if (this.storyActive) this.startStoryRace();
+          else this.state = 'track';
         }
-        if (input.backPressed) this.state = 'title';
+        if (input.backPressed) {
+          this.storyActive = false;
+          this.state = 'title';
+        }
         break;
       }
 
@@ -201,6 +249,15 @@ export class Game {
         this.braking = input.brake;
         this.lookingBack = input.lookBack;
         race.update(dt, input);
+
+        // Banner da rodada do modo história: entra logo após o "GO!".
+        if (this.storyBannerPending && race.phase === 'racing') {
+          this.storyBannerPending = false;
+          this.bannerText = 'MODO HISTÓRIA';
+          this.bannerSub = `RODADA ${this.storyRound + 1}/${TRACKS.length} · ${TRACKS[this.storyRound].name}`;
+          this.bannerTimer = 2.6;
+        }
+
         this.updateTireSmoke(dt, race);
         this.updateExhaust(dt, race);
 
@@ -263,8 +320,31 @@ export class Game {
         this.lookingBack = false;
         if (input.confirmPressed || input.backPressed) {
           this.audio.beep(440, 0.08);
-          this.race = null;
-          this.state = 'title';
+          if (this.storyActive) {
+            this.advanceStory();
+          } else {
+            this.race = null;
+            this.state = 'title';
+          }
+        }
+        break;
+      }
+
+      case 'story': {
+        this.menuZ += dt * 2200;
+        if (input.confirmPressed) {
+          this.audio.beep(880, 0.12, 'square', 0.12);
+          this.startStoryRace();
+        } else if (input.backPressed) {
+          this.quitStory();
+        }
+        break;
+      }
+
+      case 'storyEnd': {
+        this.menuZ += dt * 2200;
+        if (input.confirmPressed || input.backPressed) {
+          this.quitStory();
         }
         break;
       }
@@ -279,6 +359,103 @@ export class Game {
   private changeTrack(direction: number): void {
     this.trackIndex = (this.trackIndex + direction + TRACKS.length) % TRACKS.length;
     this.audio.beep(520, 0.05, 'square', 0.08);
+  }
+
+  // --- Modo história ---
+
+  private resetStory(): void {
+    this.storyActive = true;
+    this.storyRound = 0;
+    this.storyPoints.clear();
+    this.storyPosSum.clear();
+    this.storyNames.clear();
+    this.storyResults = [];
+  }
+
+  private startStoryRace(): void {
+    this.trackIndex = this.storyRound;
+    this.startRace();
+    // O banner da rodada aparece quando a contagem termina (senão fica
+    // escondido atrás do "3, 2, 1, GO!").
+    this.storyBannerPending = true;
+  }
+
+  private advanceStory(): void {
+    const race = this.race;
+    if (!race) {
+      this.state = 'title';
+      return;
+    }
+
+    this.awardStoryPoints(race);
+
+    if (this.storyRound < TRACKS.length - 1) {
+      this.storyRound += 1;
+      this.state = 'story';
+    } else {
+      this.state = 'storyEnd';
+    }
+  }
+
+  /** Soma os pontos da corrida e guarda o melhor resultado de cada piloto. */
+  private awardStoryPoints(race: Race): void {
+    this.storyPlayerId = race.player.id;
+    const playerPosition = race.standings.indexOf(race.player) + 1;
+    this.storyResults.push({
+      track: race.track.name,
+      position: playerPosition > 0 ? playerPosition : race.racers.length,
+    });
+
+    race.standings.forEach((racer, i) => {
+      const points = STORY_POINTS[i] ?? 0;
+      this.storyPoints.set(racer.id, (this.storyPoints.get(racer.id) ?? 0) + points);
+      this.storyPosSum.set(racer.id, (this.storyPosSum.get(racer.id) ?? 0) + i + 1);
+      this.storyNames.set(racer.id, racer.name);
+    });
+  }
+
+  private quitStory(): void {
+    this.audio.beep(440, 0.08);
+    this.storyActive = false;
+    this.storyRound = 0;
+    this.storyBannerPending = false;
+    this.race = null;
+    this.paused = false;
+    this.audio.silenceEngine();
+    this.menuIndex = 1;
+    this.state = 'title';
+  }
+
+  private buildStoryData(complete: boolean): StoryScreenData {
+    const entries = [...this.storyPoints.entries()].map(([id, points]) => ({
+      id,
+      name: this.storyNames.get(id) ?? `CPU ${String(id + 1).padStart(2, '0')}`,
+      points,
+      posSum: this.storyPosSum.get(id) ?? Number.MAX_SAFE_INTEGER,
+    }));
+    entries.sort((a, b) => b.points - a.points || a.posSum - b.posSum || a.id - b.id);
+
+    const rows: StoryRow[] = entries.map((entry) => ({
+      name: entry.name,
+      points: entry.points,
+      isPlayer: entry.id === this.storyPlayerId,
+    }));
+    const playerPosition = Math.max(
+      1,
+      entries.findIndex((entry) => entry.id === this.storyPlayerId) + 1,
+    );
+
+    return {
+      complete,
+      round: Math.min(this.storyRound + 1, TRACKS.length),
+      totalRounds: TRACKS.length,
+      nextTrack: TRACKS[this.storyRound]?.name ?? TRACKS[TRACKS.length - 1].name,
+      rows,
+      playerPosition,
+      totalRacers: entries.length || 15,
+      champion: playerPosition === 1,
+      results: this.storyResults,
+    };
   }
 
   /** Liga os botões de toque do HTML ao estado de input do jogo. */
@@ -338,12 +515,14 @@ export class Game {
         break;
 
       case 1:
-        this.startRace();
+        if (this.storyActive) this.startStoryRace();
+        else this.startRace();
         break;
 
       case 2:
         this.paused = false;
         this.race = null;
+        this.storyActive = false;
         this.audio.silenceEngine();
         this.audio.beep(440, 0.08);
         this.state = 'title';
@@ -368,6 +547,7 @@ export class Game {
     this.audio.beep(880, 0.16, 'square', 0.16);
     this.race = new Race(TRACKS[this.trackIndex], CAR_SPECS[this.carIndex], this.audio);
     this.paused = false;
+    this.storyBannerPending = false;
     this.bannerTimer = 0;
     this.lastLaps = 0;
     this.fuelWarned = false;
@@ -385,16 +565,21 @@ export class Game {
     switch (this.state) {
       case 'title':
         this.renderMenuBackground();
-        drawTitleScreen(ctx, this.blink);
+        drawTitleScreen(ctx, this.menuIndex, this.blink);
+        break;
+
+      case 'help':
+        this.renderMenuBackground();
+        drawHelpScreen(ctx, this.blink);
         break;
 
       case 'car':
         this.renderMenuBackground();
-        drawCarSelectScreen(ctx, CAR_SPECS, this.carIndex, this.blink);
+        drawCarSelectScreen(ctx, CAR_SPECS, this.carIndex, this.blink, this.storyActive);
         break;
 
       case 'track':
-        this.renderMenuBackground();
+        this.renderMenuBackground(this.trackIndex);
         drawTrackSelectScreen(ctx, TRACKS, this.trackIndex, this.blink);
         break;
 
@@ -402,22 +587,43 @@ export class Game {
         this.renderRace();
         break;
 
-      case 'results':
-        this.renderRace();
-        if (this.race) drawResultsScreen(ctx, this.race, this.blink);
+      case 'results': {
+        this.renderRace(false);
+        if (this.race) {
+          const position = this.race.positionDisplay;
+          drawResultsScreen(ctx, this.race, this.blink, {
+            story: this.storyActive,
+            round: this.storyRound + 1,
+            totalRounds: TRACKS.length,
+            ...(this.storyActive
+              ? { pointsGained: STORY_POINTS[position - 1] ?? 0 }
+              : {}),
+          });
+        }
+        break;
+      }
+
+      case 'story':
+        this.renderMenuBackground(this.storyRound);
+        drawStoryScreen(ctx, this.buildStoryData(false), this.blink);
+        break;
+
+      case 'storyEnd':
+        this.renderMenuBackground(TRACKS.length - 1);
+        drawStoryScreen(ctx, this.buildStoryData(true), this.blink);
         break;
     }
   }
 
-  private renderMenuBackground(): void {
-    const track = TRACKS[0];
+  private renderMenuBackground(trackIndex = 0): void {
+    const track = TRACKS[trackIndex] ?? TRACKS[0];
     const camZ = this.menuZ;
     const camX = Math.sin(this.menuZ / 11000) * 900;
     const camY = this.groundAt(track, camZ) + CAMERA_HEIGHT;
     this.renderWorld(track, camZ, camX, camY, null);
   }
 
-  private renderRace(): void {
+  private renderRace(showHud = true): void {
     const race = this.race;
     if (!race) return;
 
@@ -452,6 +658,8 @@ export class Game {
     this.drawSpeedFx(race);
     this.drawExhaust();
     ctx.restore();
+
+    if (!showHud) return;
 
     drawHud(ctx, this.buildHud(race));
 
