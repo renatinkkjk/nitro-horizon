@@ -45,7 +45,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
 - [x] Gasolina com consumo por RPM/nitro e modo reserva
 - [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens, reabastecimento com limite de velocidade e **nitro cheio por passagem**
-- [x] **Subidas e descidas** em todos os circuitos, com horizonte inclinando conforme o aclive/declive
+- [x] **Sem subidas/descidas**: a pista é sempre plana para evitar problemas de colisão e visibilidade
 - [x] **Menu de pausa (ESC/P)**: continuar, reiniciar corrida, sair para o menu e **tela cheia**
 - [x] **Tela cheia no PC e no celular**: tecla `F`, opção no menu de pausa e botão de toque `⛶` no mobile; aviso amigável quando o navegador não suporta
 - [x] **Port mobile**: botões de toque para acelerar, frear, esterçar, nitro, olhar para trás (RÉ), pausa e tela cheia
@@ -78,7 +78,7 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 | Frear | `↓` / `S` |
 | Virar | `←` `→` / `A` `D` |
 | Nitro | `Espaço` |
-| Olhar para trás | `R` (segurar) | Muda a câmera para visão traseira; a pista curva ao contrário e os oponentes atrás aparecem.
+| Olhar para trás | `R` (segurar) | Muda a câmera para visão traseira. A pista curva ao contrário e os oponentes atrás aparecem. Redução de velocidade ao virar. Nitro com escape do RX-7.
 | Subir marcha | `Shift` / `E` |
 | Descer marcha | `Ctrl` / `Q` |
 | Confirmar | `Enter` |
