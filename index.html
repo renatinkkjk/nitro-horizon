@@ -44,6 +44,29 @@
       pointer-events: none;
       user-select: none;
     }
+    body.is-fullscreen #hint { display: none; }
+
+    /* Aviso rápido (ex.: tela cheia indisponível no iPhone). */
+    #toast {
+      position: fixed;
+      left: 50%; bottom: 28px;
+      transform: translate(-50%, 10px);
+      max-width: min(92vw, 420px);
+      padding: 10px 14px;
+      border: 2px solid #2a3560;
+      background: rgba(11, 13, 23, 0.96);
+      color: #e8ecff;
+      font: 12px/1.4 ui-monospace, monospace;
+      text-align: center;
+      border-radius: 4px;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 30;
+    }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+    body.touch #toast { bottom: 124px; }
 
     /* Controles de toque (mobile): ficam abaixo do canvas, fora do HUD. */
     #touch { display: none; }
@@ -103,9 +126,19 @@
       pointer-events: auto;
       z-index: 11;
     }
-    .tbtn.ok {
+    .tbtn.fullscreen {
       position: fixed;
       top: 54px; right: 10px;
+      width: 46px; height: 34px;
+      font-size: 15px;
+      pointer-events: auto;
+      z-index: 11;
+      display: none;
+    }
+    body.touch .tbtn.fullscreen { display: flex; }
+    .tbtn.ok {
+      position: fixed;
+      top: 96px; right: 10px;
       width: 46px; height: 34px;
       font-size: 12px;
       pointer-events: auto;
@@ -124,7 +157,8 @@
   <div id="app">
     <canvas id="game" width="320" height="224" aria-label="Nitro Horizon"></canvas>
   </div>
-  <div id="hint">SETAS / WASD · ESPAÇO = NITRO · SHIFT/CTRL = MARCHA · ESC = PAUSA</div>
+  <div id="hint">SETAS / WASD · ESPAÇO = NITRO · SHIFT/CTRL = MARCHA · ESC = PAUSA · F = TELA CHEIA</div>
+  <div id="toast" role="status" aria-live="polite"></div>
   <div id="touch">
     <div class="tgroup">
       <button class="tbtn" data-code="ArrowLeft" aria-label="Esquerda">◀</button>
@@ -135,6 +169,7 @@
       <button class="tbtn brake" data-code="ArrowDown" aria-label="Frear">FREIO</button>
       <button class="tbtn gas" data-code="ArrowUp" aria-label="Acelerar">GÁS</button>
     </div>
+    <button class="tbtn fullscreen" data-action="fullscreen" aria-label="Tela cheia">⛶</button>
     <button class="tbtn pause" data-code="Escape" aria-label="Pausar">II</button>
     <button class="tbtn ok" data-code="Enter" aria-label="Confirmar">OK</button>
   </div>

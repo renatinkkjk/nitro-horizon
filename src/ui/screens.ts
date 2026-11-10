@@ -21,6 +21,26 @@ function pips(ctx: CanvasRenderingContext2D, x: number, y: number, value: number
   }
 }
 
+/** Quebra um texto em linhas que cabem na largura informada (fonte já configurada). */
+function wrapText(ctx: CanvasRenderingContext2D, value: string, maxWidth: number): string[] {
+  const words = value.split(' ');
+  const lines: string[] = [];
+  let line = '';
+
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(next).width > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+
+  if (line) lines.push(line);
+  return lines;
+}
+
 export function drawTitleScreen(ctx: CanvasRenderingContext2D, blink: boolean): void {
   ctx.fillStyle = 'rgba(5,6,12,0.55)';
   ctx.fillRect(0, 0, 320, 224);
@@ -38,7 +58,7 @@ export function drawTitleScreen(ctx: CanvasRenderingContext2D, blink: boolean): 
   ctx.font = '6px monospace';
   ctx.fillStyle = '#4a5480';
   ctx.fillText('SETAS = DIRIGIR   ESPAÇO = NITRO', 160, 196);
-  ctx.fillText('SHIFT / CTRL = MARCHA   P = PAUSA', 160, 206);
+  ctx.fillText('SHIFT / CTRL = MARCHA   P = PAUSA   F = TELA CHEIA', 160, 206);
   ctx.fillStyle = '#3dff8b';
   ctx.fillText('PIT STOP: ENTRE À DIREITA NA RETA PRINCIPAL', 160, 218);
 }
@@ -52,40 +72,62 @@ export function drawCarSelectScreen(
   ctx.fillStyle = 'rgba(5,6,12,0.68)';
   ctx.fillRect(0, 0, 320, 224);
 
-  title(ctx, 'ESCOLHA SEU CARRO', 30, 11, '#ffd23f');
-
-  const cardW = 70;
-  const gap = 6;
-  const startX = 10;
-  const y = 46;
-  const h = 72;
-
-  cars.forEach((car, i) => {
-    const x = startX + i * (cardW + gap);
-    const selected = i === index;
-    panel(ctx, x, y, cardW, h, selected ? 0.95 : 0.55);
-    if (selected) {
-      ctx.strokeStyle = '#22e0ff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x + 1, y + 1, cardW - 2, h - 2);
-    }
-
-    drawCar(ctx, x + cardW / 2, y + h - 12, 44, 26, {
-      body: car.body,
-      accent: car.accent,
-      style: car.style,
-    });
-
-    ctx.font = 'bold 6px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = selected ? '#ffffff' : '#8b93bd';
-    ctx.fillText(car.name, x + cardW / 2, y + h - 2);
-  });
+  title(ctx, 'ESCOLHA SEU CARRO', 24, 11, '#ffd23f');
 
   const car = cars[index];
 
-  title(ctx, car.name, 138, 11, '#ffffff');
-  text(ctx, car.tagline, 160, 150, 7, '#8b93bd', 'center', false);
+  // Painel-esquerdo: showroom com o carro grande em 3/4.
+  panel(ctx, 8, 32, 174, 102, 0.94);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(9, 33, 172, 100);
+  ctx.clip();
+
+  const spot = ctx.createRadialGradient(95, 90, 4, 95, 90, 78);
+  spot.addColorStop(0, 'rgba(34,224,255,0.16)');
+  spot.addColorStop(1, 'rgba(34,224,255,0)');
+  ctx.fillStyle = spot;
+  ctx.fillRect(9, 33, 172, 100);
+
+  // Linhas de velocidade discretas ao fundo.
+  ctx.strokeStyle = 'rgba(34,224,255,0.12)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < 4; i += 1) {
+    const y = 62 + i * 13;
+    ctx.beginPath();
+    ctx.moveTo(14, y);
+    ctx.lineTo(38 + i * 5, y);
+    ctx.moveTo(152 - i * 5, y);
+    ctx.lineTo(176, y);
+    ctx.stroke();
+  }
+
+  ctx.strokeStyle = 'rgba(34,224,255,0.4)';
+  ctx.beginPath();
+  ctx.ellipse(95, 123, 64, 6, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const preview =
+    car.style === 'rx7'
+      ? { steer: 0.78, view: 'rearQuarter' as const }
+      : { steer: 0.45 };
+  drawCar(ctx, 95, 121, 124, 70, { body: car.body, accent: car.accent, style: car.style }, preview);
+  ctx.restore();
+
+  // Painel-direito: nome, perfil e atributos.
+  panel(ctx, 188, 32, 124, 102, 0.88);
+
+  ctx.font = 'bold 9px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(car.name, 250, 47);
+
+  ctx.font = '6px monospace';
+  ctx.fillStyle = '#8b93bd';
+  const tagline = wrapText(ctx, car.tagline, 110);
+  tagline.slice(0, 2).forEach((line, i) => {
+    ctx.fillText(line, 250, 57 + i * 7);
+  });
 
   const stats: Array<[string, number]> = [
     ['VELOCIDADE', car.stats.velocidade],
@@ -96,15 +138,46 @@ export function drawCarSelectScreen(
   ];
 
   stats.forEach(([label, value], i) => {
-    const sy = 166 + i * 10;
-    text(ctx, label, 60, sy, 7, '#8b93bd');
-    pips(ctx, 140, sy, value);
+    const sy = 79 + i * 9;
+    text(ctx, label, 194, sy, 6, '#8b93bd');
+    pips(ctx, 258, sy, value);
   });
 
-  text(ctx, `NITROS: ${car.nitros}`, 220, 166, 7, '#22e0ff');
-  text(ctx, `MÁX: ${Math.round((car.maxSpeed / 11800) * 300)} km/h`, 220, 176, 7, '#22e0ff');
+  text(ctx, `NITROS: ${car.nitros}`, 194, 126, 6, '#22e0ff');
+  text(ctx, `MÁX: ${Math.round((car.maxSpeed / 11800) * 300)} KM/H`, 306, 126, 6, '#22e0ff', 'right');
 
-  if (blink) text(ctx, '◀  ▶    ENTER PARA CONFIRMAR', 160, 216, 7, '#ffd23f', 'center');
+  // Faixa inferior: os quatro carros em cartões compactos.
+  const cardW = 72;
+  const gap = 6;
+  const startX = 7;
+  const y = 142;
+  const h = 48;
+
+  cars.forEach((item, i) => {
+    const x = startX + i * (cardW + gap);
+    const selected = i === index;
+    panel(ctx, x, y, cardW, h, selected ? 0.96 : 0.55);
+    if (selected) {
+      ctx.strokeStyle = '#22e0ff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, cardW - 2, h - 2);
+    }
+
+    drawCar(ctx, x + cardW / 2, y + 31, 42, 24, {
+      body: item.body,
+      accent: item.accent,
+      style: item.style,
+    });
+
+    ctx.font = 'bold 6px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = selected ? '#ffffff' : '#8b93bd';
+    ctx.fillText(item.name, x + cardW / 2, y + h - 5);
+  });
+
+  if (blink) {
+    text(ctx, '◀ ▶ TROCAR · ENTER CONFIRMAR · F TELA CHEIA', 160, 214, 6, '#ffd23f', 'center');
+  }
 }
 
 export function drawTrackSelectScreen(
@@ -230,18 +303,23 @@ export interface PauseOption {
   enabled: boolean;
 }
 
-/** Opções do menu de pausa (ESC). Novas opções entram aqui. */
-export const PAUSE_OPTIONS: PauseOption[] = [
-  { label: 'CONTINUAR', enabled: true },
-  { label: 'REINICIAR CORRIDA', enabled: true },
-  { label: 'SAIR PARA O MENU', enabled: true },
-  { label: 'OPÇÕES (EM BREVE)', enabled: false },
-];
+/** Quantidade de opções do menu de pausa. */
+export const PAUSE_OPTION_COUNT = 4;
+
+/** Opções do menu de pausa (ESC/P). O rótulo de tela cheia acompanha o estado atual. */
+export function pauseOptions(fullscreenActive: boolean): PauseOption[] {
+  return [
+    { label: 'CONTINUAR', enabled: true },
+    { label: 'REINICIAR CORRIDA', enabled: true },
+    { label: 'SAIR PARA O MENU', enabled: true },
+    { label: fullscreenActive ? 'SAIR DA TELA CHEIA' : 'TELA CHEIA  [F]', enabled: true },
+  ];
+}
 
 export function drawPauseScreen(
   ctx: CanvasRenderingContext2D,
   index: number,
-  options: PauseOption[] = PAUSE_OPTIONS,
+  options: PauseOption[] = pauseOptions(false),
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.74)';
   ctx.fillRect(0, 0, 320, 224);
@@ -268,5 +346,5 @@ export function drawPauseScreen(
     );
   });
 
-  text(ctx, '↑ ↓ NAVEGAR · ENTER CONFIRMAR · ESC VOLTAR', 160, 180, 6, '#4a5480', 'center', false);
+  text(ctx, '↑ ↓ NAVEGAR · ENTER OK · ESC VOLTAR', 160, 180, 6, '#4a5480', 'center', false);
 }

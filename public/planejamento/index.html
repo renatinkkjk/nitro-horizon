@@ -242,6 +242,7 @@
       <span class="badge yellow">320×224</span>
       <span class="badge">1P + 14 BOTS</span>
       <span class="badge pink">4 CARROS</span>
+      <span class="badge yellow">TELA CHEIA</span>
     </div>
     <a class="play-btn" href="../">▶ JOGAR AGORA</a>
   </header>
@@ -273,7 +274,7 @@
       </div>
       <div class="card">
         <div class="stat">4 MODELOS</div>
-        <div class="stat-label">Falcão GT, Trovão V8, Vespa RS e Titã Turbo — perfis distintos de velocidade, aceleração, grip, tanque e nitro.</div>
+        <div class="stat-label">Mazda RX-7, Trovão V8, Vespa RS e Titã Turbo — perfis distintos de velocidade, aceleração, grip, tanque e nitro. O RX-7 tem sprite dedicado em 5 vistas e showroom próprio na seleção.</div>
       </div>
       <div class="card">
         <div class="stat">3 PISTAS</div>
@@ -317,7 +318,7 @@
           <tr><th>Modelo</th><th>Perfil</th><th>Vel. máx.</th><th>Acel.</th><th>Grip</th><th>Tanque</th><th>Consumo</th><th>Nitros</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>Falcão GT</strong></td><td>Equilibrado</td><td class="stars">★★★☆</td><td class="stars">★★★</td><td class="stars">★★★</td><td class="stars">★★★</td><td class="stars">★★★</td><td>3</td></tr>
+          <tr><td><strong>Mazda RX-7</strong></td><td>Equilibrado</td><td class="stars">★★★☆</td><td class="stars">★★★</td><td class="stars">★★★</td><td class="stars">★★★</td><td class="stars">★★★</td><td>3</td></tr>
           <tr><td><strong>Trovão V8</strong></td><td>Velocista</td><td class="stars">★★★★</td><td class="stars">★★☆</td><td class="stars">★★☆</td><td class="stars">★★★★</td><td class="stars">★★☆</td><td>2</td></tr>
           <tr><td><strong>Vespa RS</strong></td><td>Ágil / leve</td><td class="stars">★★☆</td><td class="stars">★★★★</td><td class="stars">★★★★</td><td class="stars">★★☆</td><td class="stars">★★★★</td><td>3</td></tr>
           <tr><td><strong>Titã Turbo</strong></td><td>Nitro / agressivo</td><td class="stars">★★★☆</td><td class="stars">★★★☆</td><td class="stars">★★☆</td><td class="stars">★★☆</td><td class="stars">★★☆</td><td>4</td></tr>
@@ -347,15 +348,19 @@
       </div>
       <div class="card">
         <div class="stat small">PAUSA / MENU</div>
-        <p><strong>ESC</strong> ou <strong>P</strong> abre o menu no meio da corrida: continuar, reiniciar, sair para o menu e um espaço reservado para opções futuras.</p>
+        <p><strong>ESC</strong> ou <strong>P</strong> abre o menu no meio da corrida: continuar, reiniciar, sair para o menu e <strong>tela cheia</strong> (o rótulo muda para “sair da tela cheia” quando ativo).</p>
+      </div>
+      <div class="card">
+        <div class="stat small">TELA CHEIA</div>
+        <p>No PC, tecla <strong>F</strong> ou opção do menu de pausa. No mobile, botão <strong>⛶</strong> logo abaixo da pausa. O canvas reescala ao entrar/sair; se a Fullscreen API não existir (iPhone), o jogo mostra a alternativa de adicionar à Tela de Início.</p>
       </div>
       <div class="card">
         <div class="stat small">MOBILE</div>
-        <p>Port de toque com botões de acelerar, frear, esterçar, nitro e pausa. Os controles ficam abaixo do canvas e o layout se adapta a retrato e paisagem.</p>
+        <p>Port de toque com botões de acelerar, frear, esterçar, nitro, pausa e tela cheia. Os controles ficam abaixo do canvas e o layout se adapta a retrato e paisagem.</p>
       </div>
       <div class="card">
         <div class="stat small">SPRITES EM 3/4</div>
-        <p>Ao esterçar, o carro do jogador passa para uma visão 3/4: cisalhamento do sprite, lateral com vidro, soleira e roda do lado da curva. As IAs inclinam de leve ao trocar de faixa.</p>
+        <p>O Mazda RX-7 tem renderizador próprio com vistas traseira, 3/4 traseira, lateral, frente e 3/4 dianteira; a seleção de carro virou um showroom com prévia grande. Nos demais modelos, ao esterçar o sprite cisalha para mostrar a lateral do lado da curva.</p>
       </div>
       <div class="card">
         <div class="stat small">COLISÕES</div>
@@ -433,7 +438,7 @@
         <ul class="clean">
           <li>3 pistas temáticas</li>
           <li>5 voltas por corrida (configurável)</li>
-          <li>Menu, seleção de carro e pista, opções</li>
+          <li>Menu, showroom de carros, seleção de pista, pausa e tela cheia</li>
           <li>Áudio WebAudio: motor, nitro, colisão, contagem e chiptune</li>
         </ul>
       </div>
@@ -484,6 +489,7 @@
           <tr><td>Performance</td><td>320×224 + sprites pré-escalados + culling → 60 fps</td></tr>
           <tr><td>Travamento na Cidade</td><td>Grade de janelas dos prédios limitada + loop protegido contra exceções</td></tr>
           <tr><td>Carros piscando</td><td>Visibilidade usa o segmento realmente desenhado (flag <code>drawn</code>), não a emenda do segmento</td></tr>
+          <tr><td>Tela cheia bloqueada pelo navegador</td><td>Fullscreen API com prefixos + aviso e alternativa “Adicionar à Tela de Início” no iPhone</td></tr>
           <tr><td>Direitos autorais</td><td>Arte, nomes e música 100% originais</td></tr>
         </tbody>
       </table>

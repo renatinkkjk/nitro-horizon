@@ -24,7 +24,7 @@
 
 ---
 
-## ✅ Estado atual (v0.5 — carros em 3/4 e correção da piscada)
+## ✅ Estado atual (v0.6 — showroom, tela cheia e RX-7)
 
 Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pista → contagem → corrida → pit stop → resultado**.
 
@@ -33,8 +33,10 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Céu com gradiente, sol com halo, nuvens, estrelas e lua com crateras
 - [x] Cenário procedural por segmento (cactos, palmeiras, árvores, rochas, placas, postes, prédios, outdoors)
 - [x] **Circuitos fechados**: o traçado dá 360° por volta e o minimapa fecha o loop com linha de largada
-- [x] **Carros redesenhados** em 4 estilos (GT, muscle, light e turbo), com pintura em dois tons, vidro com reflexo, aerofólio, lanternas, escapamentos e **contornos pretos** no estilo pixel art
-- [x] **Carro em 3/4 ao esterçar**: ao virar, o sprite mostra a lateral do lado da curva, com roda dianteira, vidro e soleira — as IAs também inclinam nas trocas de faixa
+- [x] **Carros redesenhados** com pintura em dois tons, vidro com reflexo, aerofólio, lanternas, escapamentos e **contornos pretos** no estilo pixel art
+- [x] **Mazda RX-7 (FD)** com renderizador dedicado em `src/render/rx7.ts` e 5 vistas: traseira, 3/4 traseira, lateral, frente e 3/4 dianteira (arte em refinamento)
+- [x] **Showroom na seleção de carro**: prévia grande em 3/4, perfil, atributos e faixa com os quatro modelos
+- [x] **Carro em 3/4 ao esterçar**: ao virar, o sprite mostra a lateral do lado da curva — as IAs também inclinam nas trocas de faixa
 - [x] **Sem carros piscando**: a visibilidade dos carros agora usa o segmento realmente desenhado no frame, em vez da emenda do segmento
 - [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
@@ -42,8 +44,9 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] Gasolina com consumo por RPM/nitro e modo reserva
 - [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens, reabastecimento com limite de velocidade e **nitro cheio por passagem**
 - [x] **Subidas e descidas** em todos os circuitos, com horizonte inclinando conforme o aclive/declive
-- [x] **Menu de pausa (ESC/P)**: continuar, reiniciar corrida, sair para o menu e espaço reservado para opções
-- [x] **Port mobile**: botões de toque para acelerar, frear, esterçar, nitro e pausa
+- [x] **Menu de pausa (ESC/P)**: continuar, reiniciar corrida, sair para o menu e **tela cheia**
+- [x] **Tela cheia no PC e no celular**: tecla `F`, opção no menu de pausa e botão de toque `⛶` no mobile; aviso amigável quando o navegador não suporta
+- [x] **Port mobile**: botões de toque para acelerar, frear, esterçar, nitro, pausa e tela cheia
 - [x] 14 IAs competitivas, com alvo de velocidade por curva, troca de faixa e rubber-band
 - [x] Colisões carro×carro (empurrão lateral + perda de velocidade)
 - [x] Voltas, melhor volta, posição e classificação em tempo real, com banner de "última volta"
@@ -60,7 +63,8 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [ ] Pickups de nitro na pista
 - [ ] Clima / variação de horário
 - [ ] Editor de pista e fantasmas de melhor volta
-- [ ] Tela de opções (volume, dificuldade, assistências)
+- [ ] Opções de volume, dificuldade e assistências
+- [ ] Refinar a arte do RX-7 com novas referências
 
 ---
 
@@ -75,10 +79,17 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 | Subir marcha | `Shift` / `E` |
 | Descer marcha | `Ctrl` / `Q` |
 | Confirmar | `Enter` |
+| Tela cheia | `F` (ou menu de pausa) |
 | Pausar / menu | `P` / `Esc` |
 | Menu de pausa | `↑` `↓` navegar · `Enter` confirmar · `Esc` voltar |
 
 O câmbio começa **automático**. Trocar de marcha manualmente funciona em paralelo (o jogo aceita os dois estilos).
+
+### 🖥️ Tela cheia
+
+- **PC:** tecla `F` ou menu de pausa → **TELA CHEIA**.
+- **Mobile:** botão **⛶** no canto superior direito; o menu de pausa também oferece a opção.
+- O jogo usa a Fullscreen API e reescala o canvas ao entrar/sair. Se o navegador não suportar (caso do Safari no iPhone), aparece um aviso com a alternativa de adicionar à Tela de Início.
 
 ### 📱 Mobile
 
@@ -88,6 +99,7 @@ Em celulares e tablets os controles de toque aparecem automaticamente abaixo do 
 - **GÁS** / **FREIO** — acelerar e frear (câmbio automático)
 - **N₂O** — nitro
 - **II** — pausa / voltar
+- **⛶** — tela cheia (no iPhone, use Compartilhar → Adicionar à Tela de Início)
 - **OK** — confirmar no menu
 
 O layout se adapta a retrato e paisagem, e as opções do menu de pausa também podem ser tocadas diretamente na tela.
@@ -110,12 +122,12 @@ O aviso `COMBUSTÍVEL BAIXO` aparece quando o tanque cai abaixo de 20%. Se o com
 
 | Modelo | Perfil | Estilo | Nitros | Tanque | Grip |
 |---|---|---|---|---|---|
-| **Falcão GT** | Equilibrado | GT (asa discreta) | 3 | 96 | Alto |
+| **Mazda RX-7** | Equilibrado | RX-7 (sprite dedicado em 5 vistas) | 3 | 96 | Alto |
 | **Trovão V8** | Velocista | Muscle (faixas duplas) | 2 | 112 | Baixo |
 | **Vespa RS** | Ágil / leve | Light (barra de luz) | 3 | 74 | Máximo |
 | **Titã Turbo** | Nitro agressivo | Turbo (asa grande) | 4 | 80 | Baixo |
 
-As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leves de skill (0,84–1,02), o que gera um grid variado sem parecer trapaça.
+As 14 IAs usam os mesmos 4 modelos com variações de cor e multiplicadores leves de skill (0,84–1,02), o que gera um grid variado sem parecer trapaça. As IAs de RX-7 reaproveitam o mesmo renderizador dedicado com as cores da paleta de oponentes.
 
 ---
 
@@ -183,7 +195,9 @@ nitro-horizon/
 │   │   └── rng.ts            # PRNG determinístico (mulberry32)
 │   ├── render/
 │   │   ├── pseudo3d.ts       # projeção, segmentos, curvas, colinas, estrada
-│   │   ├── sprites.ts        # carros e cenário desenhados por código
+│   │   ├── sprites.ts        # carros genéricos e cenário desenhados por código
+│   │   ├── rx7.ts            # sprite dedicado do Mazda RX-7 (5 vistas)
+│   │   ├── color.ts          # utilitário de clarear/escurecer cores
 │   │   └── hud.ts            # HUD, minimapa, barras e formatação de tempo
 │   ├── world/
 │   │   ├── track.ts          # TrackBuilder + decoração + mapa top-down
@@ -194,7 +208,8 @@ nitro-horizon/
 │   │   ├── gearbox.ts        # câmbio de 6 marchas, RPM e torque
 │   │   └── race.ts           # física, IA, colisões, voltas e classificação
 │   └── ui/
-│       └── screens.ts        # título, seleção, contagem, resultado, pausa
+│       ├── screens.ts        # título, showroom, seleção de pista, pausa, resultado
+│       └── fullscreen.ts     # tela cheia no PC/mobile + fallback com aviso
 └── .github/workflows/deploy.yml
 ```
 

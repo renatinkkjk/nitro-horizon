@@ -1,4 +1,10 @@
 import { Game } from './game';
+import {
+  isFullscreen,
+  showFullscreenUnsupported,
+  subscribeFullscreen,
+  toggleFullscreen,
+} from './ui/fullscreen';
 
 const element = document.querySelector<HTMLCanvasElement>('#game');
 
@@ -33,8 +39,44 @@ if (isTouch) document.body.classList.add('touch');
 // Hook de depuração: expõe o estado do jogo no console do navegador.
 (window as unknown as { __nitro?: Game }).__nitro = game;
 
+// --- Tela cheia (PC: F ou menu de pausa / mobile: botão ⛶) ---
+
+const fullscreenButton = document.querySelector<HTMLButtonElement>('[data-action="fullscreen"]');
+
+async function requestFullscreenToggle(): Promise<void> {
+  const result = await toggleFullscreen();
+  if (result === 'unsupported') showFullscreenUnsupported();
+  fitCanvas();
+}
+
+fullscreenButton?.addEventListener('click', (event) => {
+  event.preventDefault();
+  void requestFullscreenToggle();
+});
+
+window.addEventListener('keydown', (event) => {
+  if (event.code === 'KeyF' && !event.repeat) {
+    event.preventDefault();
+    void requestFullscreenToggle();
+  }
+});
+
+/** Mantém o ícone do botão e o layout sincronizados com o estado real da tela cheia. */
+function syncFullscreenUi(): void {
+  const active = isFullscreen();
+  document.body.classList.toggle('is-fullscreen', active);
+  if (fullscreenButton) {
+    fullscreenButton.textContent = active ? '⤡' : '⛶';
+    fullscreenButton.setAttribute('aria-label', active ? 'Sair da tela cheia' : 'Tela cheia');
+  }
+  fitCanvas();
+}
+
+subscribeFullscreen(syncFullscreenUi);
+
 function fitCanvas(): void {
   // Escala inteira para manter os pixels nítidos (no mobile, aproveita a tela).
+  // Em tela cheia, ganha a área da barra de endereço e o canvas cresce junto.
   const controls = isTouch ? 112 : 0;
   const availableW = window.innerWidth;
   const availableH = window.innerHeight - controls - (isTouch ? 12 : 30);
@@ -47,3 +89,4 @@ function fitCanvas(): void {
 window.addEventListener('resize', fitCanvas);
 window.addEventListener('orientationchange', fitCanvas);
 fitCanvas();
+syncFullscreenUi();

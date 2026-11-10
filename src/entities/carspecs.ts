@@ -6,7 +6,7 @@ export interface CarStats {
   consumo: number;
 }
 
-export type CarStyle = 'gt' | 'muscle' | 'light' | 'turbo';
+export type CarStyle = 'gt' | 'muscle' | 'light' | 'turbo' | 'rx7';
 
 export interface CarSpec {
   id: string;
@@ -27,12 +27,12 @@ export interface CarSpec {
 /** Velocidades em unidades de mundo por segundo (a pista tem ~300.000 por volta). */
 export const CAR_SPECS: CarSpec[] = [
   {
-    id: 'falcao',
-    name: 'FALCÃO GT',
-    tagline: 'Equilibrado — o all-rounder.',
-    body: '#e8e8f0',
-    accent: '#ff3d7f',
-    style: 'gt',
+    id: 'rx7',
+    name: 'MAZDA RX-7',
+    tagline: 'Rotativo equilibrado — o all-rounder.',
+    body: '#f0f2f6',
+    accent: '#ff2d55',
+    style: 'rx7',
     maxSpeed: 11800,
     accelFactor: 4.2,
     grip: 0.86,

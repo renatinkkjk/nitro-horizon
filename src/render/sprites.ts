@@ -1,5 +1,7 @@
 import type { CarStyle } from '../entities/carspecs';
+import { shade } from './color';
 import type { SpriteKind } from './pseudo3d';
+import { drawRx7, type Rx7View } from './rx7';
 
 export interface CarPaint {
   body: string;
@@ -13,6 +15,8 @@ export interface CarDrawOptions {
   tilt?: number;
   /** -1 (esquerda) a 1 (direita): mostra o carro em 3/4, com a lateral do lado da curva. */
   steer?: number;
+  /** Vista específica para carros com sprites dedicados (RX-7). */
+  view?: Rx7View;
   player?: boolean;
 }
 
@@ -29,18 +33,6 @@ function poly(ctx: CanvasRenderingContext2D, points: Array<[number, number]>, co
     ctx.stroke();
   }
 }
-/** Clareia (amount > 0) ou escurece (amount < 0) uma cor hexadecimal. */
-function shade(hex: string, amount: number): string {
-  const clean = hex.replace('#', '');
-  const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
-  const value = parseInt(full, 16);
-  const channel = (raw: number) => {
-    const next = amount > 0 ? raw + (255 - raw) * amount : raw * (1 + amount);
-    return Math.max(0, Math.min(255, Math.round(next)));
-  };
-  return `rgb(${channel((value >> 16) & 255)},${channel((value >> 8) & 255)},${channel(value & 255)})`;
-}
-
 /** Carro visto de trás. (cx, baseY) = centro inferior em pixels. */
 export function drawCar(
   ctx: CanvasRenderingContext2D,
@@ -52,6 +44,12 @@ export function drawCar(
   opts: CarDrawOptions = {},
 ): void {
   if (w < 2 || h < 2) return;
+
+  // Carros com sprite dedicado (RX-7) usam o renderizador por vistas.
+  if (paint.style === 'rx7') {
+    drawRx7(ctx, cx, baseY, w, h, paint, opts);
+    return;
+  }
 
   const half = w / 2;
   const style = paint.style ?? 'gt';

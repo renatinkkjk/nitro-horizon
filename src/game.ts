@@ -16,14 +16,20 @@ import {
 } from './render/pseudo3d';
 import { drawCar, drawScenery, spriteWorldSize } from './render/sprites';
 import {
-  PAUSE_OPTIONS,
+  PAUSE_OPTION_COUNT,
   drawCarSelectScreen,
   drawCountdown,
   drawPauseScreen,
   drawResultsScreen,
   drawTitleScreen,
   drawTrackSelectScreen,
+  pauseOptions,
 } from './ui/screens';
+import {
+  isFullscreen,
+  showFullscreenUnsupported,
+  toggleFullscreen,
+} from './ui/fullscreen';
 import type { Track } from './world/track';
 import { TRACKS } from './world/tracks';
 
@@ -153,11 +159,11 @@ export class Game {
           }
           if (input.upPressed) {
             this.pauseIndex =
-              (this.pauseIndex + PAUSE_OPTIONS.length - 1) % PAUSE_OPTIONS.length;
+              (this.pauseIndex + PAUSE_OPTION_COUNT - 1) % PAUSE_OPTION_COUNT;
             this.audio.beep(480, 0.04, 'square', 0.06);
           }
           if (input.downPressed) {
-            this.pauseIndex = (this.pauseIndex + 1) % PAUSE_OPTIONS.length;
+            this.pauseIndex = (this.pauseIndex + 1) % PAUSE_OPTION_COUNT;
             this.audio.beep(480, 0.04, 'square', 0.06);
           }
           if (input.confirmPressed) this.choosePauseOption();
@@ -293,7 +299,7 @@ export class Game {
       const y = ((event.clientY - rect.top) / rect.height) * HEIGHT;
       if (x < 58 || x > 262 || y < 80 || y > 164) return;
       const index = Math.round((y - 92) / 20);
-      if (index < 0 || index >= PAUSE_OPTIONS.length) return;
+      if (index < 0 || index >= PAUSE_OPTION_COUNT) return;
       if (Math.abs(y - (92 + index * 20)) > 10) return;
       this.pauseIndex = index;
       this.choosePauseOption();
@@ -319,8 +325,15 @@ export class Game {
         this.state = 'title';
         break;
 
+      case 3: {
+        this.audio.beep(660, 0.05, 'square', 0.08);
+        void toggleFullscreen().then((result) => {
+          if (result === 'unsupported') showFullscreenUnsupported();
+        });
+        break;
+      }
+
       default:
-        // Opções ainda desabilitadas (reservado para futuras configurações).
         this.audio.beep(220, 0.08, 'square', 0.06);
         break;
     }
@@ -408,7 +421,7 @@ export class Game {
     }
 
     if (race.phase === 'countdown') drawCountdown(ctx, race.countdown);
-    if (this.paused) drawPauseScreen(ctx, this.pauseIndex, PAUSE_OPTIONS);
+    if (this.paused) drawPauseScreen(ctx, this.pauseIndex, pauseOptions(isFullscreen()));
   }
 
   private groundAt(track: Track, distance: number): number {
