@@ -38,11 +38,11 @@ Já funciona de ponta a ponta: **menu → seleção de carro → seleção de pi
 - [x] **Showroom na seleção de carro**: prévia grande com o sprite frontal do RX-7, perfil, atributos e faixa com os quatro modelos
 - [x] **Olhar para trás (R)**: segurar `R` muda a câmera para a visão traseira; a pista e os oponentes são mostrados invertidos (curvas invertidas, direção do tráfego), para que o jogador veja o que está atrás dele — inclui sprites dos carros atrás. O sprite do jogador muda para frontal (RX-7) ou mantém a vista traseira.
 - [x] **Inclinação lateral**: jogador e IAs tombam suavemente ao esterçar, girando o sprite ao redor da base sem trocá-lo
-- [x] **Fumaça dos pneus**: partículas discretas ao andar, que ficam maiores e mais frequentes nas curvas fortes e escorrem para fora da curva
+- [x] **Fumaça dos pneus**: partículas discretas ao andar, saindo por trás do carro; em drift ficam laterais e maiores; frequência e tamanho crescem com velocidade e curvatura
 - [x] **Sem carros piscando**: a visibilidade dos carros agora usa o segmento realmente desenhado no frame, em vez da emenda do segmento
 - [x] Carro do jogador: aceleração, freio, direção, força centrífuga, off-road e colisão com cenário
 - [x] Câmbio de 6 marchas (automático e manual) com RPM e curva de torque
-- [x] Nitro limitado, com boost, tremor de tela e linhas de velocidade
+- [x] **Nitro limitado, com boost, tremor de tela e linhas de velocidade; escape do RX-7 projeta partículas no ativar.**
 - [x] Gasolina com consumo por RPM/nitro e modo reserva
 - [x] **Pit stop em todas as pistas**: via de boxes na reta principal, placas PIT, muro, garagens, reabastecimento com limite de velocidade e **nitro cheio por passagem**
 - [x] **Sem subidas/descidas**: a pista é sempre plana para evitar problemas de colisão e visibilidade
