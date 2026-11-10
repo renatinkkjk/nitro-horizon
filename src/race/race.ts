@@ -68,6 +68,7 @@ export class Race {
   shake = 0;
   nitroFx = 0;
   standings: Racer[] = [];
+  readonly nitroPickups: number[] = [];
 
   private readonly audio: AudioEngine;
   private rng = new Rng(0x6e697472);
@@ -140,6 +141,13 @@ export class Race {
 
     this.player = this.racers[playerGrid];
     this.standings = [...this.racers];
+    // Posições de nitro espalhadas pela pista (em metros ao longo do circuito).
+    // O jogador ganha +1 nitro ao passar por estas posições.
+    this.nitroPickups = [
+      2000, 4000, 6000, 8000,  // 1ª volta
+      this.track.length + 2000, this.track.length + 4000,  // 2ª volta
+      this.track.length * 2 + 2000, this.track.length * 2 + 4000,  // 3ª volta
+    ];
   }
 
   get lapDisplay(): number {
@@ -284,6 +292,18 @@ export class Race {
     }
 
     p.offRoad = Math.abs(p.offset) > 1.02 && !p.inPit;
+
+    // --- NITRO PICKUPS: passar por estas posições enche o nitro ---
+    const pickupRange = 30;
+    for (const pickup of this.nitroPickups) {
+      const gap = mod(p.distance - pickup, this.track.length);
+      if (gap > 0 && gap < pickupRange) {
+        p.nitroLeft = Math.min(spec.nitros, p.nitroLeft + 1);
+        const idx = this.nitroPickups.indexOf(pickup);
+        if (idx > -1) this.nitroPickups.splice(idx, 1);
+        break;
+      }
+    }
     if (p.offRoad) {
       const limit = spec.maxSpeed * 0.34;
       if (p.speed > limit) p.speed = Math.max(limit, p.speed - spec.maxSpeed * 1.15 * dt);
@@ -321,8 +341,30 @@ export class Race {
       target *= Math.min(1, steerFactor + 0.1);
 
       const gap = this.player.distance - r.distance;
-      if (gap > 1200) target *= 1.06;
-      else if (gap < -2600) target *= 0.97;
+      // Rubber band: ajusta a velocidade alvo base na diferença de posição.
+      // Quanto maior a diferença, mais forte o efeito.
+      const rubber = Math.min(0.15, Math.abs(gap) / 4000);
+      if (gap > 0) {
+        // Player à frente: AI acelera para tentar alcançar
+        target *= 1 + rubber;
+      } else if (gap < 0) {
+        // Player atrás: AI freia um pouco para não abrir muito
+        target *= 1 - rubber;
+      }
+
+      // --- DRAFTING (SLIPSTREAM) ---
+      // Se o jogador está atrás deste carro e próximo, dar boost.
+      // O jogador fica "grudado" e ganha velocidade temporária.
+      const playerBehind = !r.isPlayer && gap > 0 && gap < 2000;
+      const playerCloseBehind = gap > 0 && gap < 800;
+      if (playerBehind) {
+        // Boost proporcional à proximité: até +10% quando bem colado
+        const draftBoost = Math.max(0, 1 - gap / 800) * 0.10;
+        target *= 1 + draftBoost;
+      }
+      if (playerCloseBehind && r.speed < target) {
+        // Efeito visual/feedback poderia ser adicionado aqui
+      }
 
       const accel = r.spec.maxSpeed / (r.spec.accelFactor * 1.2);
       if (r.speed < target) r.speed = Math.min(target, r.speed + accel * dt);

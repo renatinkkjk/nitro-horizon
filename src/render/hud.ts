@@ -226,6 +226,15 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
 
   text(ctx, `TOTAL ${formatTime(data.totalTime)}`, 6, 27, 7, '#8b93bd');
 
+  // indicador visual de rubber band
+  if (data.position <= 3 && data.total > 3) {
+    const rpct = (1 - data.position / data.total) * 100;
+    ctx.fillStyle = `rgba(34,224,255,${rpct / 100 * 0.4})`;
+    ctx.fillRect(280, 10, 36, 6);
+    ctx.fillStyle = '#22e0ff';
+    ctx.fillRect(280 + (100 - rpct) / 100 * 36, 10, (rpct / 100) * 36, 6);
+  }
+
   // minimapa
   drawMinimap(ctx, 250, 4, 66, 48, data.map, data.dots, data.pit);
   text(ctx, `MELHOR ${formatTime(data.bestLap)}`, 316, 61, 7, '#ffd23f', 'right');
@@ -282,6 +291,20 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
     ctx.strokeStyle = '#2a3560';
     ctx.lineWidth = 1;
     ctx.stroke();
+  }
+
+  // indicador de drafting
+  if (data.message && data.messageTimer > 0) {
+    const blink = Math.floor(performance.now() / 200) % 2 === 0;
+    if (blink) text(ctx, data.message, 160, 84, 12, '#ffd23f', 'center');
+  }
+
+  if (data.position <= 3 && data.total > 3) {
+    const rpct = (1 - data.position / data.total) * 100;
+    ctx.fillStyle = `rgba(255, 165, 0, ${rpct / 100 * 0.3})`;
+    ctx.fillRect(280, 10, 36, 6);
+    ctx.fillStyle = '#ffa500';
+    ctx.fillRect(280 + (100 - rpct) / 100 * 36, 10, (rpct / 100) * 36, 6);
   }
 
   if (data.lastLap && data.messageTimer <= 0) {
