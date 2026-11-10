@@ -669,19 +669,24 @@ export class Game {
     this.smokeTimer += dt * (5 + 27 * strength);
     while (this.smokeTimer >= 1) {
       this.smokeTimer -= 1;
-      this.spawnSmokePuff(strength, turnDir);
+      this.spawnSmokePuff(strength, turnDir, Math.abs(player.steer));
     }
   }
 
-  private spawnSmokePuff(strength: number, turnDir: number): void {
-    const side = Math.random() < 0.5 ? -1 : 1;
+  private spawnSmokePuff(strength: number, turnDir: number, steer: number): void {
+    // Fumaça saindo por trás do carro (non-drift) ou lateral (drift)
+    const isDrift = steer > 0.5;
+    const side = isDrift ? (Math.random() < 0.5 ? -1 : 1) : 0;
     const outward = 6 + 10 * strength;
-    // A fumaça escorrega para fora da curva.
-    const push = -turnDir * (10 + 24 * strength);
+    // A fumaça escorrega para fora da curva apenas em drift.
+    const push = isDrift ? -turnDir * (10 + 24 * strength) : 0;
+    // Posição: trás do carro (centro x, y abaixo do carro) ou lateral em drift.
+    const backY = 214 + 52 + 6; // baseY + altura do carro + pequeno offset
+    const lateralOffset = isDrift ? (30 + Math.random() * 4) : 0;
     this.smoke.push({
-      x: 160 + side * (30 + Math.random() * 4),
-      y: 211 + Math.random() * 4,
-      vx: side * outward * (0.5 + Math.random()) + push + (Math.random() - 0.5) * 6,
+      x: 160 + side * lateralOffset,
+      y: backY + Math.random() * 4,
+      vx: isDrift ? side * outward * (0.5 + Math.random()) + push + (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 3,
       vy: -(3 + 10 * strength) - Math.random() * 5,
       life: 0,
       maxLife: 0.45 + Math.random() * 0.35 + strength * 0.25,

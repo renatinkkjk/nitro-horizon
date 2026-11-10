@@ -214,7 +214,7 @@ export class Race {
     if (input.right) steer += 1;
     p.steer = lerp(p.steer, steer, Math.min(1, dt * 14));
     // Redução de velocidade ao virar: quanto maior o ângulo de giro, menor a velocidade máxima.
-    const steerFactor = Math.max(0, 1 - Math.abs(p.steer) * 0.3);
+    const steerFactor = Math.max(0, 1 - Math.abs(p.steer) * 0.1);
     const speedCap = spec.maxSpeed * steerFactor;
     if (p.speed > speedCap) p.speed = Math.max(speedCap, p.speed - spec.maxSpeed * 1.5 * dt);
     p.offset += steer * 2.6 * Math.max(0.12, speedFrac) * dt;
