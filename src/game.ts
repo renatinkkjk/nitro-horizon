@@ -55,10 +55,12 @@ interface SmokePuff {
   strength: number;
 }
 
-const WIDTH = 320;
-const HEIGHT = 224;
+const WIDTH = 400;
+const HEIGHT = 280;
 const CAR_WORLD_WIDTH = 820;
 const CAR_WORLD_HEIGHT = 620;
+
+export { WIDTH, HEIGHT };
 
 export class Game {
   private readonly ctx: CanvasRenderingContext2D;
@@ -888,11 +890,11 @@ export class Game {
     const outward = 6 + 10 * strength;
     // A fumaça escorrega para fora da curva apenas em drift.
     const push = isDrift ? -turnDir * (10 + 24 * strength) : 0;
-    // Posição: trás do carro (centro x, y abaixo do carro) ou lateral em drift.
-    const backY = 214 + 52 + 6; // baseY + altura do carro + pequeno offset
-    const lateralOffset = isDrift ? (30 + Math.random() * 4) : 0;
+    // Posição: traseira do carro (centro x, y logo abaixo do escapamento) ou lateral em drift.
+    const backY = 272; // baseY + pequeno offset, dentro do canvas 280
+    const lateralOffset = isDrift ? (37 + Math.random() * 5) : 0;
     this.smoke.push({
-      x: 160 + side * lateralOffset,
+      x: 200 + side * lateralOffset,
       y: backY + Math.random() * 4,
       vx: isDrift ? side * outward * (0.5 + Math.random()) + push + (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 3,
       vy: -(3 + 10 * strength) - Math.random() * 5,
@@ -932,8 +934,8 @@ export class Game {
       const emitRate = 8; // partículas por frame quando nitro ativo
       while (this.exhaustTimer >= (1 / emitRate)) {
         this.exhaustTimer -= 1 / emitRate;
-        const exhaustY = 216 + 26; // posição traseira do carro (baseY + altura/2)
-        const exhaustX = 160; // centro do carro
+        const exhaustY = 260; // escapamento na traseira do RX-7 (dentro do carro, perto do chão)
+        const exhaustX = 200; // centro do carro
         const angle = Math.random() * Math.PI * 2;
         const speed = 2 + Math.random() * 2;
         this.exhaustParticles.push({
@@ -998,10 +1000,10 @@ export class Game {
 
     drawCar(
       ctx,
-      160,
-      216 - 2,
-      72,
-      52,
+      200,
+      266,
+      90,
+      65,
       { body: player.body, accent: player.accent, style: player.spec.style },
       {
         brake: this.braking,

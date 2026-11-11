@@ -37,6 +37,8 @@ export interface HudData {
   messageTimer: number;
 }
 
+import { WIDTH, HEIGHT } from '../game';
+
 /**
  * Desenha o traçado como uma curva fechada e suave, passando pelos pontos
  * do mapa. Evita o aspecto "poligonal" do minimapa.
@@ -103,10 +105,18 @@ export function text(
   color: string,
   align: CanvasTextAlign = 'left',
   bold = true,
+  outline = true,
 ): void {
   ctx.font = `${bold ? 'bold ' : ''}${size}px monospace`;
   ctx.textAlign = align;
   ctx.textBaseline = 'alphabetic';
+  if (outline) {
+    // Contorno preto ao redor do texto para melhor legibilidade.
+    ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+    ctx.lineWidth = size * 0.28;
+    ctx.lineJoin = 'round';
+    ctx.strokeText(value, Math.round(x), Math.round(y));
+  }
   ctx.fillStyle = color;
   ctx.fillText(value, Math.round(x), Math.round(y));
 }
@@ -208,84 +218,86 @@ function drawMinimap(
 }
 
 export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
+  const cx = WIDTH / 2; // 200
+
   // barra superior
   ctx.fillStyle = 'rgba(7,9,20,0.72)';
-  ctx.fillRect(0, 0, 320, 18);
+  ctx.fillRect(0, 0, WIDTH, 22);
   ctx.strokeStyle = '#2a3560';
   ctx.lineWidth = 1;
-  ctx.strokeRect(0.5, 0.5, 319, 17);
+  ctx.strokeRect(0.5, 0.5, WIDTH - 1, 21);
 
-  text(ctx, 'POS', 6, 12, 6, '#8b93bd');
-  text(ctx, `${data.position}/${data.total}`, 24, 12, 8, '#ffffff');
+  text(ctx, 'POS', 8, 15, 7, '#8b93bd');
+  text(ctx, `${data.position}/${data.total}`, 30, 15, 10, '#ffffff');
 
-  text(ctx, 'VOLTA', 86, 12, 6, '#8b93bd');
-  text(ctx, `${data.lap}/${data.laps}`, 112, 12, 8, '#ffffff');
+  text(ctx, 'VOLTA', 108, 15, 7, '#8b93bd');
+  text(ctx, `${data.lap}/${data.laps}`, 140, 15, 10, '#ffffff');
 
-  text(ctx, 'ATUAL', 150, 12, 6, '#8b93bd');
-  text(ctx, formatTime(data.lapTime), 174, 12, 8, '#22e0ff');
+  text(ctx, 'ATUAL', 188, 15, 7, '#8b93bd');
+  text(ctx, formatTime(data.lapTime), 218, 15, 10, '#22e0ff');
 
-  text(ctx, `TOTAL ${formatTime(data.totalTime)}`, 6, 27, 7, '#8b93bd');
+  text(ctx, `TOTAL ${formatTime(data.totalTime)}`, 8, 34, 7, '#8b93bd');
 
-  // indicador visual de rubber band
+  // indicador visual de rubber band (topo direito)
   if (data.position <= 3 && data.total > 3) {
     const rpct = (1 - data.position / data.total) * 100;
     ctx.fillStyle = `rgba(34,224,255,${rpct / 100 * 0.4})`;
-    ctx.fillRect(280, 10, 36, 6);
+    ctx.fillRect(350, 12, 45, 8);
     ctx.fillStyle = '#22e0ff';
-    ctx.fillRect(280 + (100 - rpct) / 100 * 36, 10, (rpct / 100) * 36, 6);
+    ctx.fillRect(350 + (100 - rpct) / 100 * 45, 12, (rpct / 100) * 45, 8);
   }
 
-  // minimapa
-  drawMinimap(ctx, 250, 4, 66, 48, data.map, data.dots, data.pit);
-  text(ctx, `MELHOR ${formatTime(data.bestLap)}`, 316, 61, 7, '#ffd23f', 'right');
+  // minimapa (topo direito)
+  drawMinimap(ctx, 313, 6, 82, 60, data.map, data.dots, data.pit);
+  text(ctx, `MELHOR ${formatTime(data.bestLap)}`, WIDTH - 6, 76, 7, '#ffd23f', 'right');
 
-  // status do pit lane
+  // status do pit lane (centro superior)
   if (data.inPit) {
     const refueling = data.refueling;
     const color = refueling ? '#3dff8b' : '#ffd23f';
-    panel(ctx, 150, 19, 90, 15, 0.78);
-    text(ctx, refueling ? 'PIT STOP' : 'PIT LANE', 155, 30, 7, color);
+    panel(ctx, 188, 30, 112, 18, 0.78);
+    text(ctx, refueling ? 'PIT STOP' : 'PIT LANE', 194, 38, 7, color);
     text(
       ctx,
       refueling ? `${Math.round(data.fuelFrac * 100)}%` : '100',
-      234,
-      30,
+      293,
+      38,
       8,
       '#ffffff',
       'right',
     );
     if (refueling) {
       ctx.fillStyle = '#3dff8b';
-      const w = 86 * Math.max(0, Math.min(1, data.fuelFrac));
-      ctx.fillRect(152, 32.5, w, 1);
+      const w = 108 * Math.max(0, Math.min(1, data.fuelFrac));
+      ctx.fillRect(192, 40, w, 1);
     }
   } else if (data.fuelFrac < 0.18) {
     const blink = Math.floor(performance.now() / 320) % 2 === 0;
-    if (blink) text(ctx, 'PIT', 314, 197, 7, '#ff4040', 'right');
+    if (blink) text(ctx, 'PIT', WIDTH - 6, 246, 7, '#ff4040', 'right');
   }
 
-  // painel de velocidade
-  panel(ctx, 4, 187, 104, 33);
+  // painel de velocidade (esquerda inferior)
+  panel(ctx, 6, 234, 130, 44);
   const kmh = Math.round(data.speedKmh);
-  text(ctx, String(kmh).padStart(3, ' '), 8, 207, 17, '#ffffff');
-  text(ctx, 'km/h', 46, 207, 7, '#8b93bd');
-  text(ctx, 'M', 84, 200, 7, '#8b93bd');
-  text(ctx, data.gear, 92, 208, 14, '#ffd23f');
+  text(ctx, String(kmh).padStart(3, ' '), 12, 258, 22, '#ffffff');
+  text(ctx, 'km/h', 62, 258, 8, '#8b93bd');
+  text(ctx, 'M', 106, 248, 8, '#8b93bd');
+  text(ctx, data.gear, 114, 262, 18, '#ffd23f');
 
   const rpmColor = data.rpmNorm > 0.85 ? '#ff4040' : data.rpmNorm > 0.65 ? '#ffd23f' : '#3dff8b';
-  bar(ctx, 8, 212, 84, 5, data.rpmNorm, rpmColor);
+  bar(ctx, 12, 270, 104, 6, data.rpmNorm, rpmColor);
 
-  // painel de combustível / nitro
-  panel(ctx, 212, 187, 104, 33);
-  text(ctx, 'GASOLINA', 216, 197, 7, '#8b93bd');
+  // painel de combustível / nitro (direita inferior)
+  panel(ctx, WIDTH - 134, 234, 130, 42);
+  text(ctx, 'GASOLINA', WIDTH - 126, 246, 8, '#8b93bd');
   const fuelColor = data.fuelFrac > 0.5 ? '#3dff8b' : data.fuelFrac > 0.2 ? '#ffd23f' : '#ff4040';
-  bar(ctx, 216, 200, 96, 6, data.fuelFrac, fuelColor);
+  bar(ctx, WIDTH - 126, 252, 120, 8, data.fuelFrac, fuelColor);
 
-  text(ctx, 'NITRO', 216, 216, 7, '#8b93bd');
+  text(ctx, 'NITRO', WIDTH - 126, 272, 8, '#8b93bd');
   for (let i = 0; i < data.nitroMax; i += 1) {
-    const cx = 248 + i * 11;
+    const ccx = WIDTH - 78 + i * 14;
     ctx.beginPath();
-    ctx.arc(cx, 213.5, 3, 0, Math.PI * 2);
+    ctx.arc(ccx, 269, 4, 0, Math.PI * 2);
     ctx.fillStyle = i < data.nitroLeft ? '#22e0ff' : '#1c2340';
     ctx.fill();
     ctx.strokeStyle = '#2a3560';
@@ -293,23 +305,24 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
     ctx.stroke();
   }
 
-  // indicador de drafting
+  // mensagem central (drafting / última volta)
+  const centerY = 108;
   if (data.message && data.messageTimer > 0) {
     const blink = Math.floor(performance.now() / 200) % 2 === 0;
-    if (blink) text(ctx, data.message, 160, 84, 12, '#ffd23f', 'center');
+    if (blink) text(ctx, data.message, cx, centerY, 15, '#ffd23f', 'center');
   }
 
   if (data.position <= 3 && data.total > 3) {
     const rpct = (1 - data.position / data.total) * 100;
     ctx.fillStyle = `rgba(255, 165, 0, ${rpct / 100 * 0.3})`;
-    ctx.fillRect(280, 10, 36, 6);
+    ctx.fillRect(350, 12, 45, 8);
     ctx.fillStyle = '#ffa500';
-    ctx.fillRect(280 + (100 - rpct) / 100 * 36, 10, (rpct / 100) * 36, 6);
+    ctx.fillRect(350 + (100 - rpct) / 100 * 45, 12, (rpct / 100) * 45, 8);
   }
 
   if (data.lastLap && data.messageTimer <= 0) {
     const blink = Math.floor(performance.now() / 300) % 2 === 0;
-    if (blink) text(ctx, 'ÚLTIMA VOLTA', 160, 84, 12, '#ffd23f', 'center');
+    if (blink) text(ctx, 'ÚLTIMA VOLTA', cx, centerY, 15, '#ffd23f', 'center');
   }
 }
 
@@ -320,10 +333,10 @@ export function drawBanner(
   color = '#ffd23f',
 ): void {
   ctx.fillStyle = 'rgba(7,9,20,0.78)';
-  ctx.fillRect(0, 92, 320, 40);
+  ctx.fillRect(0, 115, WIDTH, 50);
   ctx.strokeStyle = color;
   ctx.lineWidth = 1;
-  ctx.strokeRect(0.5, 92.5, 319, 39);
-  text(ctx, title, 160, 110, 12, color, 'center');
-  text(ctx, subtitle, 160, 125, 7, '#e8ecff', 'center', false);
+  ctx.strokeRect(0.5, 115.5, WIDTH - 1, 49);
+  text(ctx, title, WIDTH / 2, 138, 16, color, 'center');
+  text(ctx, subtitle, WIDTH / 2, 158, 9, '#e8ecff', 'center', false);
 }

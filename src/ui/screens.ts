@@ -3,6 +3,7 @@ import type { CarSpec } from '../entities/carspecs';
 import type { Track } from '../world/track';
 import { drawCar } from '../render/sprites';
 import { formatTime, panel, text, traceTrack } from '../render/hud';
+import { WIDTH, HEIGHT } from '../game';
 
 function title(ctx: CanvasRenderingContext2D, value: string, y: number, size: number, color: string): void {
   ctx.font = `bold ${size}px monospace`;
@@ -56,41 +57,41 @@ export function drawTitleScreen(
   blink: boolean,
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.55)';
-  ctx.fillRect(0, 0, 320, 224);
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
-  title(ctx, 'NITRO', 56, 34, '#ff3d7f');
-  title(ctx, 'HORIZON', 92, 34, '#22e0ff');
+  title(ctx, 'NITRO', 70, 42, '#ff3d7f');
+  title(ctx, 'HORIZON', 116, 42, '#22e0ff');
 
-  ctx.font = 'bold 6px monospace';
+  ctx.font = 'bold 7px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#8b93bd';
-  ctx.fillText('CORRIDA ARCADE PIXEL ART', 160, 110);
+  ctx.fillText('CORRIDA ARCADE PIXEL ART', WIDTH / 2, 138);
 
-  panel(ctx, 64, 118, 192, 78, 0.74);
+  panel(ctx, 80, 148, 240, 98, 0.74);
 
   MAIN_MENU_OPTIONS.forEach((label, i) => {
-    const y = 136 + i * 22;
+    const y = 170 + i * 28;
     const selected = i === menuIndex;
     if (selected) {
       ctx.fillStyle = 'rgba(34,224,255,0.16)';
-      ctx.fillRect(70, y - 11, 180, 16);
-      if (blink) text(ctx, '▶', 76, y, 8, '#22e0ff');
+      ctx.fillRect(88, y - 14, 224, 20);
+      if (blink) text(ctx, '▶', 96, y, 10, '#22e0ff');
     }
-    text(ctx, label, 160, y, 8, selected ? '#ffffff' : '#b8c2e8', 'center');
+    text(ctx, label, WIDTH / 2, y, 10, selected ? '#ffffff' : '#b8c2e8', 'center');
   });
 
-  ctx.font = '6px monospace';
+  ctx.font = '7px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('↑ ↓ NAVEGAR · ENTER CONFIRMAR · F TELA CHEIA', 160, 212);
+  ctx.fillText('↑ ↓ NAVEGAR · ENTER CONFIRMAR · F TELA CHEIA', WIDTH / 2, 266);
 }
 
 export function drawHelpScreen(ctx: CanvasRenderingContext2D, blink: boolean): void {
   ctx.fillStyle = 'rgba(5,6,12,0.86)';
-  ctx.fillRect(0, 0, 320, 224);
+  ctx.fillRect(0, 0, 400, 280);
 
-  panel(ctx, 12, 18, 296, 184, 0.92);
-  title(ctx, 'COMO JOGAR', 38, 12, '#22e0ff');
+  panel(ctx, 15, 22, 370, 230, 0.92);
+  title(ctx, 'COMO JOGAR', 48, 15, '#22e0ff');
 
   const lines: Array<[string, string]> = [
     ['DIRIGIR', 'SETAS / WASD'],
@@ -108,12 +109,12 @@ export function drawHelpScreen(ctx: CanvasRenderingContext2D, blink: boolean): v
   ];
 
   lines.forEach(([label, value], i) => {
-    const y = 58 + i * 11;
-    if (label) text(ctx, label, 24, y, 6, '#ffd23f');
-    text(ctx, value, 148, y, 6, '#c8d0e0', 'left', false);
+    const y = 72 + i * 14;
+    if (label) text(ctx, label, 30, y, 8, '#ffd23f');
+    text(ctx, value, 185, y, 8, '#c8d0e0', 'left', false);
   });
 
-  if (blink) text(ctx, 'ENTER / ESC PARA VOLTAR', 160, 212, 7, '#ffd23f', 'center');
+  if (blink) text(ctx, 'ENTER / ESC PARA VOLTAR', 200, 266, 9, '#ffd23f', 'center');
 }
 
 export function drawCarSelectScreen(
@@ -124,63 +125,63 @@ export function drawCarSelectScreen(
   story = false,
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.68)';
-  ctx.fillRect(0, 0, 320, 224);
+  ctx.fillRect(0, 0, 400, 280);
 
-  title(ctx, story ? 'MODO HISTÓRIA · ESCOLHA O CARRO' : 'ESCOLHA SEU CARRO', 24, story ? 9 : 11, '#ffd23f');
+  title(ctx, story ? 'MODO HISTÓRIA · ESCOLHA O CARRO' : 'ESCOLHA SEU CARRO', 30, story ? 12 : 14, '#ffd23f');
 
   const car = cars[index];
 
   // Painel-esquerdo: showroom com o carro grande.
-  panel(ctx, 8, 32, 174, 102, 0.94);
+  panel(ctx, 10, 40, 218, 128, 0.94);
   ctx.save();
   ctx.beginPath();
-  ctx.rect(9, 33, 172, 100);
+  ctx.rect(11, 41, 215, 125);
   ctx.clip();
 
-  const spot = ctx.createRadialGradient(95, 90, 4, 95, 90, 78);
+  const spot = ctx.createRadialGradient(119, 113, 5, 119, 113, 98);
   spot.addColorStop(0, 'rgba(34,224,255,0.16)');
   spot.addColorStop(1, 'rgba(34,224,255,0)');
   ctx.fillStyle = spot;
-  ctx.fillRect(9, 33, 172, 100);
+  ctx.fillRect(11, 41, 215, 125);
 
   // Linhas de velocidade discretas ao fundo.
   ctx.strokeStyle = 'rgba(34,224,255,0.12)';
   ctx.lineWidth = 1;
   for (let i = 0; i < 4; i += 1) {
-    const y = 62 + i * 13;
+    const y = 78 + i * 16;
     ctx.beginPath();
-    ctx.moveTo(14, y);
-    ctx.lineTo(38 + i * 5, y);
-    ctx.moveTo(152 - i * 5, y);
-    ctx.lineTo(176, y);
+    ctx.moveTo(18, y);
+    ctx.lineTo(48 + i * 6, y);
+    ctx.moveTo(190 - i * 6, y);
+    ctx.lineTo(220, y);
     ctx.stroke();
   }
 
   ctx.strokeStyle = 'rgba(34,224,255,0.4)';
   ctx.beginPath();
-  ctx.ellipse(95, 123, 64, 6, 0, 0, Math.PI * 2);
+  ctx.ellipse(119, 154, 80, 7, 0, 0, Math.PI * 2);
   ctx.stroke();
 
   const preview =
     car.style === 'rx7'
       ? { view: 'front' as const }
       : {};
-  drawCar(ctx, 95, 121, 124, 70, { body: car.body, accent: car.accent, style: car.style }, preview);
+  drawCar(ctx, 119, 151, 155, 88, { body: car.body, accent: car.accent, style: car.style }, preview);
   ctx.restore();
 
   // Painel-direito: nome, perfil e atributos.
-  panel(ctx, 188, 32, 124, 102, 0.88);
+  panel(ctx, 235, 40, 155, 128, 0.88);
 
-  ctx.font = 'bold 9px monospace';
+  ctx.font = 'bold 11px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(car.name, 250, 47);
+  ctx.fillText(car.name, 313, 59);
 
-  ctx.font = '6px monospace';
+  ctx.font = '8px monospace';
   ctx.fillStyle = '#8b93bd';
-  const tagline = wrapText(ctx, car.tagline, 110);
+  const tagline = wrapText(ctx, car.tagline, 138);
   tagline.slice(0, 2).forEach((line, i) => {
-    ctx.fillText(line, 250, 57 + i * 7);
+    ctx.fillText(line, 313, 71 + i * 9);
   });
 
   const stats: Array<[string, number]> = [
@@ -192,20 +193,28 @@ export function drawCarSelectScreen(
   ];
 
   stats.forEach(([label, value], i) => {
-    const sy = 79 + i * 9;
-    text(ctx, label, 194, sy, 6, '#8b93bd');
-    pips(ctx, 258, sy, value);
+    const sy = 99 + i * 11;
+    text(ctx, label, 243, sy, 8, '#8b93bd');
+    pips(ctx, 323, sy, value);
   });
 
-  text(ctx, `NITROS: ${car.nitros}`, 194, 126, 6, '#22e0ff');
-  text(ctx, `MÁX: ${Math.round((car.maxSpeed / 11800) * 300)} KM/H`, 306, 126, 6, '#22e0ff', 'right');
+  text(ctx, `NITROS: ${car.nitros}`, 243, 158, 8, '#22e0ff');
+  text(
+    ctx,
+    `MÁX: ${Math.round((car.maxSpeed / 11800) * 300)} KM/H`,
+    383,
+    158,
+    8,
+    '#22e0ff',
+    'right',
+  );
 
   // Faixa inferior: os quatro carros em cartões compactos.
-  const cardW = 72;
-  const gap = 6;
-  const startX = 7;
-  const y = 142;
-  const h = 48;
+  const cardW = 90;
+  const gap = 8;
+  const startX = 9;
+  const y = 178;
+  const h = 60;
 
   cars.forEach((item, i) => {
     const x = startX + i * (cardW + gap);
@@ -217,25 +226,25 @@ export function drawCarSelectScreen(
       ctx.strokeRect(x + 1, y + 1, cardW - 2, h - 2);
     }
 
-    drawCar(ctx, x + cardW / 2, y + 31, 42, 24, {
+    drawCar(ctx, x + cardW / 2, y + 39, 52, 30, {
       body: item.body,
       accent: item.accent,
       style: item.style,
       ...(item.style === 'rx7' ? { view: 'rear' as const } : {}),
     });
 
-    ctx.font = 'bold 6px monospace';
+    ctx.font = 'bold 8px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = selected ? '#ffffff' : '#8b93bd';
-    ctx.fillText(item.name, x + cardW / 2, y + h - 5);
+    ctx.fillText(item.name, x + cardW / 2, y + h - 7);
   });
 
   if (story) {
-    text(ctx, 'DESERTO → LITORAL → CIDADE', 160, 202, 6, '#8b93bd', 'center', false);
+    text(ctx, 'DESERTO → LITORAL → CIDADE', 200, 253, 8, '#8b93bd', 'center', false);
   }
 
   if (blink) {
-    text(ctx, '◀ ▶ TROCAR · ENTER CONFIRMAR · F TELA CHEIA', 160, 214, 6, '#ffd23f', 'center');
+    text(ctx, '◀ ▶ TROCAR · ENTER CONFIRMAR · F TELA CHEIA', 200, 268, 8, '#ffd23f', 'center');
   }
 }
 
@@ -246,15 +255,15 @@ export function drawTrackSelectScreen(
   blink: boolean,
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.68)';
-  ctx.fillRect(0, 0, 320, 224);
+  ctx.fillRect(0, 0, 400, 280);
 
-  title(ctx, 'ESCOLHA A PISTA', 30, 11, '#ffd23f');
+  title(ctx, 'ESCOLHA A PISTA', 38, 14, '#ffd23f');
 
-  const cardW = 88;
-  const gap = 12;
-  const startX = 16;
-  const y = 44;
-  const h = 100;
+  const cardW = 110;
+  const gap = 15;
+  const startX = 20;
+  const y = 55;
+  const h = 125;
 
   tracks.forEach((track, i) => {
     const x = startX + i * (cardW + gap);
@@ -266,18 +275,18 @@ export function drawTrackSelectScreen(
       ctx.strokeRect(x + 1, y + 1, cardW - 2, h - 2);
     }
 
-    ctx.font = 'bold 8px monospace';
+    ctx.font = 'bold 10px monospace';
     ctx.textAlign = 'center';
     ctx.fillStyle = selected ? '#ffffff' : '#8b93bd';
-    ctx.fillText(track.name, x + cardW / 2, y + 14);
+    ctx.fillText(track.name, x + cardW / 2, y + 18);
 
-    text(ctx, track.difficulty, x + cardW / 2, y + 25, 6, '#ffd23f', 'center', false);
+    text(ctx, track.difficulty, x + cardW / 2, y + 31, 8, '#ffd23f', 'center', false);
 
     // prévia do traçado
-    const mx = x + 12;
-    const my = y + 32;
-    const mw = cardW - 24;
-    const mh = 46;
+    const mx = x + 15;
+    const my = y + 40;
+    const mw = cardW - 28;
+    const mh = 58;
     let minX = Infinity;
     let maxX = -Infinity;
     let minY = Infinity;
@@ -295,26 +304,26 @@ export function drawTrackSelectScreen(
     ctx.lineWidth = 1;
     traceTrack(ctx, track.map, ox, oy, scale);
 
-    text(ctx, `${track.laps} VOLTAS`, x + cardW / 2, y + h - 8, 6, '#8b93bd', 'center', false);
+    text(ctx, `${track.laps} VOLTAS`, x + cardW / 2, y + h - 10, 8, '#8b93bd', 'center', false);
   });
 
   const track = tracks[index];
-  text(ctx, track.blurb, 160, 162, 7, '#e8ecff', 'center', false);
-  text(ctx, 'PIT STOP NA RETA PRINCIPAL', 160, 172, 6, '#3dff8b', 'center', false);
-  text(ctx, `15 CARROS · PSEUDO-3D · ${track.laps} VOLTAS`, 160, 181, 6, '#4a5480', 'center', false);
+  text(ctx, track.blurb, 200, 203, 9, '#e8ecff', 'center', false);
+  text(ctx, 'PIT STOP NA RETA PRINCIPAL', 200, 215, 8, '#3dff8b', 'center', false);
+  text(ctx, `15 CARROS · PSEUDO-3D · ${track.laps} VOLTAS`, 200, 226, 8, '#4a5480', 'center', false);
 
-  if (blink) text(ctx, '◀  ▶    ENTER PARA LARGAR', 160, 210, 7, '#ffd23f', 'center');
+  if (blink) text(ctx, '◀  ▶    ENTER PARA LARGAR', 200, 263, 9, '#ffd23f', 'center');
 }
 
 export function drawCountdown(ctx: CanvasRenderingContext2D, value: number): void {
   const label = value <= 0 ? 'GO!' : String(Math.ceil(value));
-  ctx.font = 'bold 46px monospace';
+  ctx.font = 'bold 58px monospace';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.fillText(label, 163, 122);
+  ctx.fillText(label, WIDTH / 2 + 3, 153);
   ctx.fillStyle = value <= 0 ? '#3dff8b' : '#ffd23f';
-  ctx.fillText(label, 160, 119);
+  ctx.fillText(label, WIDTH / 2, 149);
 }
 
 export interface ResultsScreenOptions {
@@ -331,58 +340,58 @@ export function drawResultsScreen(
   options: ResultsScreenOptions = {},
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.84)';
-  ctx.fillRect(0, 0, 320, 224);
+  ctx.fillRect(0, 0, 400, 280);
 
   const heading = options.story
     ? `RODADA ${options.round ?? 1}/${options.totalRounds ?? 3} · ${race.track.name}`
     : 'RESULTADO FINAL';
-  title(ctx, heading, 28, options.story ? 10 : 12, '#ffd23f');
+  title(ctx, heading, 35, options.story ? 13 : 15, '#ffd23f');
 
   const standings = race.standings.slice(0, 9);
-  const startY = 44;
+  const startY = 55;
 
-  ctx.font = 'bold 6px monospace';
+  ctx.font = 'bold 8px monospace';
   ctx.textAlign = 'left';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('POS', 10, startY);
-  ctx.fillText('PILOTO', 34, startY);
+  ctx.fillText('POS', 12, startY);
+  ctx.fillText('PILOTO', 42, startY);
   ctx.textAlign = 'right';
-  ctx.fillText('TEMPO', 310, startY);
+  ctx.fillText('TEMPO', 388, startY);
 
   standings.forEach((racer: Racer, i) => {
-    const y = startY + 13 + i * 13;
+    const y = 71 + i * 16;
     const isPlayer = racer.isPlayer;
     if (isPlayer) {
       ctx.fillStyle = 'rgba(34,224,255,0.14)';
-      ctx.fillRect(6, y - 10, 308, 12);
+      ctx.fillRect(8, y - 12, 384, 15);
     }
     const medal = i === 0 ? '#ffd23f' : i === 1 ? '#c8d4e8' : i === 2 ? '#e0955a' : null;
     const color = isPlayer ? '#22e0ff' : medal ?? '#c8d0e0';
-    text(ctx, `${i + 1}`, 10, y, 8, medal ?? color);
-    text(ctx, racer.name, 34, y, 8, color);
-    text(ctx, racer.spec.name, 96, y, 6, isPlayer ? '#7f9bd6' : '#5a6388', 'left', false);
-    if (racer.isPlayer) text(ctx, '◀ VOCÊ', 158, y, 6, '#22e0ff');
+    text(ctx, `${i + 1}`, 12, y, 10, medal ?? color);
+    text(ctx, racer.name, 42, y, 10, color);
+    text(ctx, racer.spec.name, 120, y, 8, isPlayer ? '#7f9bd6' : '#5a6388', 'left', false);
+    if (racer.isPlayer) text(ctx, '◀ VOCÊ', 198, y, 8, '#22e0ff');
     const value = racer.finished ? formatTime(racer.finishTime) : `volta ${racer.lapsDone + 1}`;
-    text(ctx, value, 310, y, 8, color, 'right');
+    text(ctx, value, 388, y, 10, color, 'right');
   });
 
-  text(ctx, `MELHOR VOLTA: ${formatTime(race.player.bestLap)}`, 10, 196, 8, '#ffd23f');
+  text(ctx, `MELHOR VOLTA: ${formatTime(race.player.bestLap)}`, 12, 245, 10, '#ffd23f');
   if (options.story) {
     if (options.pointsGained !== undefined) {
-      text(ctx, `+${options.pointsGained} PONTOS`, 160, 196, 8, '#3dff8b', 'center');
+      text(ctx, `+${options.pointsGained} PONTOS`, 200, 245, 10, '#3dff8b', 'center');
     }
-    text(ctx, `PISTA: ${race.track.name}`, 310, 196, 7, '#8b93bd', 'right');
+    text(ctx, `PISTA: ${race.track.name}`, 388, 245, 9, '#8b93bd', 'right');
   } else {
-    text(ctx, `PISTA: ${race.track.name}`, 310, 196, 7, '#8b93bd', 'right');
+    text(ctx, `PISTA: ${race.track.name}`, 388, 245, 9, '#8b93bd', 'right');
   }
 
   if (blink) {
     text(
       ctx,
       options.story ? 'ENTER PARA CONTINUAR' : 'ENTER PARA VOLTAR AO MENU',
-      160,
-      214,
-      7,
+      200,
+      268,
+      9,
       '#e8ecff',
       'center',
     );
@@ -417,45 +426,45 @@ export function drawStoryScreen(
   blink: boolean,
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.8)';
-  ctx.fillRect(0, 0, 320, 224);
+  ctx.fillRect(0, 0, 400, 280);
 
   if (data.complete) {
     title(
       ctx,
       data.champion ? 'CAMPEÃO DO HORIZONTE' : 'HISTÓRIA CONCLUÍDA',
-      24,
-      data.champion ? 12 : 11,
+      30,
+      data.champion ? 15 : 13,
       data.champion ? '#3dff8b' : '#ffd23f',
     );
     text(
       ctx,
       `VOCÊ TERMINOU EM ${data.playerPosition}º DE ${data.totalRacers}`,
-      160,
-      40,
-      8,
+      200,
+      50,
+      10,
       '#ffffff',
       'center',
     );
     const summary = data.results
       .map((result) => `${result.track.slice(0, 3)} ${result.position}º`)
       .join(' · ');
-    if (summary) text(ctx, summary, 160, 52, 6, '#8b93bd', 'center', false);
+    if (summary) text(ctx, summary, 200, 65, 8, '#8b93bd', 'center', false);
   } else {
-    title(ctx, 'MODO HISTÓRIA', 24, 12, '#ffd23f');
-    text(ctx, `RODADA ${data.round}/${data.totalRounds}`, 160, 40, 9, '#ffffff', 'center');
-    text(ctx, data.nextTrack, 160, 52, 7, '#22e0ff', 'center');
+    title(ctx, 'MODO HISTÓRIA', 30, 15, '#ffd23f');
+    text(ctx, `RODADA ${data.round}/${data.totalRounds}`, 200, 50, 11, '#ffffff', 'center');
+    text(ctx, data.nextTrack, 200, 65, 9, '#22e0ff', 'center');
   }
 
-  const headerY = 68;
-  panel(ctx, 18, 58, 284, 142, 0.62);
-  ctx.font = 'bold 6px monospace';
+  const headerY = 85;
+  panel(ctx, 22, 72, 356, 178, 0.62);
+  ctx.font = 'bold 8px monospace';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('POS', 28, headerY);
-  ctx.fillText('PILOTO', 58, headerY);
+  ctx.fillText('POS', 35, headerY);
+  ctx.fillText('PILOTO', 72, headerY);
   ctx.textAlign = 'right';
-  ctx.fillText('PONTOS', 292, headerY);
+  ctx.fillText('PONTOS', 365, headerY);
 
   const maxRows = 10;
   const display = data.rows.slice(0, maxRows).map((row, i) => ({ row, pos: i + 1 }));
@@ -465,26 +474,26 @@ export function drawStoryScreen(
   }
 
   display.forEach(({ row, pos }, i) => {
-    const y = headerY + 13 + i * 12;
+    const y = 101 + i * 15;
     if (row.isPlayer) {
       ctx.fillStyle = 'rgba(34,224,255,0.14)';
-      ctx.fillRect(16, y - 9, 288, 12);
+      ctx.fillRect(20, y - 11, 360, 15);
     }
     const medal = pos === 1 ? '#ffd23f' : pos === 2 ? '#c8d4e8' : pos === 3 ? '#e0955a' : null;
     const color = row.isPlayer ? '#22e0ff' : medal ?? '#c8d0e0';
-    text(ctx, `${pos}`, 28, y, 8, medal ?? color);
-    text(ctx, row.name, 58, y, 8, color);
-    if (row.isPlayer) text(ctx, '◀ VOCÊ', 108, y, 6, '#22e0ff');
-    text(ctx, `${row.points}`, 292, y, 8, color, 'right');
+    text(ctx, `${pos}`, 35, y, 10, medal ?? color);
+    text(ctx, row.name, 72, y, 10, color);
+    if (row.isPlayer) text(ctx, '◀ VOCÊ', 135, y, 8, '#22e0ff');
+    text(ctx, `${row.points}`, 365, y, 10, color, 'right');
   });
 
   if (blink) {
     text(
       ctx,
       data.complete ? 'ENTER PARA VOLTAR AO MENU' : 'ENTER PARA LARGAR · ESC PARA SAIR',
-      160,
-      212,
-      7,
+      200,
+      266,
+      9,
       '#ffd23f',
       'center',
     );
@@ -515,29 +524,29 @@ export function drawPauseScreen(
   options: PauseOption[] = pauseOptions(false),
 ): void {
   ctx.fillStyle = 'rgba(5,6,12,0.74)';
-  ctx.fillRect(0, 0, 320, 224);
+  ctx.fillRect(0, 0, 400, 280);
 
-  panel(ctx, 58, 40, 204, 146, 0.9);
-  title(ctx, 'PAUSA', 68, 20, '#22e0ff');
+  panel(ctx, 72, 50, 255, 183, 0.9);
+  title(ctx, 'PAUSA', 85, 25, '#22e0ff');
 
   options.forEach((option, i) => {
-    const y = 92 + i * 20;
+    const y = 115 + i * 25;
     const selected = i === index;
     if (selected) {
       ctx.fillStyle = option.enabled ? 'rgba(34,224,255,0.16)' : 'rgba(74,84,128,0.18)';
-      ctx.fillRect(66, y - 11, 188, 16);
-      text(ctx, '▶', 74, y, 8, option.enabled ? '#22e0ff' : '#4a5480');
+      ctx.fillRect(82, y - 14, 235, 20);
+      text(ctx, '▶', 92, y, 10, option.enabled ? '#22e0ff' : '#4a5480');
     }
     text(
       ctx,
       option.label,
-      160,
+      200,
       y,
-      8,
+      10,
       !option.enabled ? '#4a5480' : selected ? '#ffffff' : '#b8c2e8',
       'center',
     );
   });
 
-  text(ctx, '↑ ↓ NAVEGAR · ENTER OK · ESC VOLTAR', 160, 180, 6, '#4a5480', 'center', false);
+  text(ctx, '↑ ↓ NAVEGAR · ENTER OK · ESC VOLTAR', 200, 225, 8, '#4a5480', 'center', false);
 }
