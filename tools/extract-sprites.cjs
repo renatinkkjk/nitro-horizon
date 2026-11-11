@@ -82,6 +82,108 @@ function cut(image, box, isBackground) {
   return cropToContent(piece);
 }
 
+/**
+ * Recorte com restauração da base. O flood-fill remove o fundo preto puro
+ * (0..7), mas também come partes pretas do carro ligadas a ele (pneus,
+ * difusor/splitter, poço da roda) — todas maciças na arte original, sem
+ * see-through na região inferior. A restauração é geométrica:
+ *
+ *  1. cap = p75 da borda inferior por tom + 4. Tudo abaixo do cap vira
+ *     transparente (remove fragmentos soltos, ex.: respingo na frente).
+ *  2. chão por coluna = pixel mais baixo com tom >= 8 dentro do cap; se a
+ *     coluna é "cega" (conteúdo 100% preto puro, ex.: pneu sem franja),
+ *     usa a mediana global do chão.
+ *  3. fill ascendente: do chão para cima, restaura tudo até o primeiro pixel
+ *     opaco (guarda: só se houver opaco a <= 90px, evita colunas de espelho).
+ *  4. fill de buracos delimitados na zona inferior (cap-150..cap): vãos
+ *     transparentes com opaco acima E abaixo, altura <= 60 (as janelas do
+ *     aerofólio, mais altas, ficam de fora).
+ */
+function cutWithGroundRefill(image, box, isBackground) {
+  const { width, height } = image.bitmap;
+  const x = Math.max(0, Math.min(box.x, width - 1));
+  const y = Math.max(0, Math.min(box.y, height - 1));
+  const w = Math.max(1, Math.min(box.w, width - x));
+  const h = Math.max(1, Math.min(box.h, height - y));
+  const piece = image.clone().crop(x, y, w, h);
+  removeBackground(piece, isBackground);
+  const { data } = piece.bitmap;
+  const alphaAt = (cx, cy) => data[(cy * w + cx) * 4 + 3];
+  const toneAt = (cx, cy) => {
+    const i = (cy * w + cx) * 4;
+    return Math.max(data[i], data[i + 1], data[i + 2]);
+  };
+
+  // Borda inferior por tom em cada coluna, limitada ao cap.
+  const valid = [];
+  for (let cx = 0; cx < w; cx += 1) {
+    let bottom = -1;
+    for (let cy = h - 1; cy >= 0; cy -= 1) {
+      if (toneAt(cx, cy) >= 8) { bottom = cy; break; }
+    }
+    valid.push(bottom);
+  }
+  const sorted = valid.filter((b) => b >= 0).sort((a, b) => a - b);
+  if (sorted.length > 10) {
+    const cap = sorted[Math.floor(sorted.length * 0.75)] + 4;
+
+    // 1) fragmentos abaixo do cap -> transparente
+    for (let cy = cap + 1; cy < h; cy += 1) {
+      for (let cx = 0; cx < w; cx += 1) data[(cy * w + cx) * 4 + 3] = 0;
+    }
+
+    // 2) chão por coluna (tom >= 8 dentro do cap; fallback = mediana)
+    const withCap = valid.map((b) => (b >= 0 && b <= cap ? b : -1));
+    const cappedSorted = withCap.filter((b) => b >= 0).sort((a, b) => a - b);
+    const median = cappedSorted.length > 0
+      ? cappedSorted[Math.floor(cappedSorted.length / 2)]
+      : cap;
+    const ground = new Array(w).fill(-1);
+    for (let cx = 0; cx < w; cx += 1) {
+      const b = withCap[cx];
+      ground[cx] = b >= 0 && b >= median - 25 ? b : Math.min(median, cap);
+    }
+
+    // 3) fill ascendente do chão até o primeiro pixel opaco
+    for (let cx = 0; cx < w; cx += 1) {
+      const g = ground[cx];
+      if (g < 0) continue;
+      // guarda: precisa de conteúdo opaco a <= 90px acima do chão
+      let hasOpaque = false;
+      for (let cy = g - 1; cy >= Math.max(0, g - 90); cy -= 1) {
+        if (alphaAt(cx, cy) > 127) { hasOpaque = true; break; }
+      }
+      if (!hasOpaque) continue;
+      for (let cy = g; cy >= 0; cy -= 1) {
+        if (alphaAt(cx, cy) > 127) break;
+        data[(cy * w + cx) * 4 + 3] = 255; // mantém o tom original
+      }
+    }
+
+    // 4) buracos delimitados na zona inferior (opaco acima e abaixo)
+    const zoneTop = Math.max(0, cap - 150);
+    for (let cx = 0; cx < w; cx += 1) {
+      let cy = cap;
+      while (cy >= zoneTop) {
+        if (alphaAt(cx, cy) > 127) { cy -= 1; continue; }
+        // início de run transparente: acha o topo
+        let top = cy;
+        while (top >= zoneTop && alphaAt(cx, top) <= 127) top -= 1;
+        const bottom = cy; // linha mais baixa do run
+        const boundedBelow = bottom + 1 <= cap && alphaAt(cx, bottom + 1) > 127;
+        const boundedAbove = top >= zoneTop && alphaAt(cx, top) > 127;
+        if (boundedBelow && boundedAbove && bottom - top <= 60) {
+          for (let fy = top + 1; fy <= bottom; fy += 1) {
+            data[(fy * w + cx) * 4 + 3] = 255; // mantém o tom original
+          }
+        }
+        cy = top - 1;
+      }
+    }
+  }
+  return cropToContent(piece);
+}
+
 async function main() {
   fs.mkdirSync(OUT, { recursive: true });
 
@@ -100,7 +202,8 @@ async function main() {
   for (const [name, box] of jobs) {
     // Threshold ESTRITO: só o preto puro do fundo é removido; os pretos
     // internos do carro (contornos, janelas, para-choques) ficam intactos.
-    const sprite = cut(sheet, box, (r, g, b) => Math.max(r, g, b) < 10);
+    // O refill por coluna recupera pneus e splitter ligados ao fundo.
+    const sprite = cutWithGroundRefill(sheet, box, (r, g, b) => Math.max(r, g, b) < 10);
     await sprite.quality(90).writeAsync(path.join(OUT, `${name}.png`));
     console.log(name, sprite.bitmap.width, 'x', sprite.bitmap.height);
   }
