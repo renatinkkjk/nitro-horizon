@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NITRO HORIZON</title>
+  <meta name="description" content="Corrida arcade pseudo-3D em pixel art: 15 carros, 4 modelos, 3 pistas e HUD retrô." />
+  <meta name="theme-color" content="#0b0d17" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230b0d17'/><rect x='2' y='6' width='12' height='6' fill='%2322e0ff'/><rect x='4' y='3' width='8' height='4' fill='%23ff3d7f'/></svg>" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #05060c;
+      overflow: hidden;
+      font-family: ui-monospace, monospace;
+    }
+    #app {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 50% 40%, #141a33 0%, #05060c 70%);
+    }
+    body.touch #app { bottom: 112px; }
+    #game {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: block;
+      background: #000;
+      box-shadow: 0 0 0 2px #1c2340, 0 0 60px rgba(34, 224, 255, 0.18);
+      touch-action: none;
+    }
+    #hint {
+      position: fixed;
+      left: 0; right: 0; bottom: 8px;
+      text-align: center;
+      color: #4a5480;
+      font-size: 11px;
+      letter-spacing: 1px;
+      pointer-events: none;
+      user-select: none;
+    }
+    body.is-fullscreen #hint { display: none; }
+
+    /* Aviso rápido (ex.: tela cheia indisponível no iPhone). */
+    #toast {
+      position: fixed;
+      left: 50%; bottom: 28px;
+      transform: translate(-50%, 10px);
+      max-width: min(92vw, 420px);
+      padding: 10px 14px;
+      border: 2px solid #2a3560;
+      background: rgba(11, 13, 23, 0.96);
+      color: #e8ecff;
+      font: 12px/1.4 ui-monospace, monospace;
+      text-align: center;
+      border-radius: 4px;
+      box-shadow: 0 6px 0 rgba(0, 0, 0, 0.35);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 30;
+    }
+    #toast.show { opacity: 1; transform: translate(-50%, 0); }
+    body.touch #toast { bottom: 124px; }
+
+    /* Controles de toque (mobile): ficam abaixo do canvas, fora do HUD. */
+    #touch { display: none; }
+    body.touch #touch { display: flex; }
+    body.touch #hint { display: none; }
+    #touch {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      height: 112px;
+      padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+      align-items: flex-end;
+      justify-content: space-between;
+      pointer-events: none;
+      user-select: none;
+      -webkit-user-select: none;
+      z-index: 10;
+    }
+    .tgroup {
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+      pointer-events: auto;
+    }
+    .tbtn {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 60px; height: 60px;
+      border: 2px solid #2a3560;
+      border-radius: 10px;
+      background: rgba(13, 17, 36, 0.86);
+      color: #cfd8ff;
+      font: bold 13px ui-monospace, monospace;
+      letter-spacing: 1px;
+      display: flex; align-items: center; justify-content: center;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      box-shadow: 0 2px 0 #05060c;
+      padding: 0;
+    }
+    .tbtn.active {
+      background: rgba(34, 224, 255, 0.3);
+      border-color: #22e0ff;
+      color: #fff;
+      transform: translateY(1px);
+    }
+    .tbtn.gas { width: 86px; height: 76px; font-size: 15px; color: #3dff8b; border-color: #2b6b4a; }
+    .tbtn.gas.active { background: rgba(61, 255, 139, 0.26); border-color: #3dff8b; }
+    .tbtn.brake { width: 62px; height: 52px; color: #ff8a3d; border-color: #6e3a24; }
+    .tbtn.brake.active { background: rgba(255, 138, 61, 0.25); border-color: #ff8a3d; }
+    .tbtn.nitro { width: 54px; height: 54px; color: #22e0ff; border-color: #2f7fd0; }
+    .tbtn.pause {
+      position: fixed;
+      top: 10px; right: 10px;
+      width: 46px; height: 38px;
+      font-size: 14px;
+      pointer-events: auto;
+      z-index: 11;
+    }
+    .tbtn.lookback {
+      position: fixed;
+      top: calc(50% - 19px); right: 10px;
+      width: 46px; height: 38px;
+      font-size: 11px;
+      color: #ffd23f;
+      border-color: #6e5a24;
+      pointer-events: auto;
+      z-index: 11;
+    }
+    .tbtn.lookback.active {
+      background: rgba(255, 210, 63, 0.25);
+      border-color: #ffd23f;
+    }
+    .tbtn.fullscreen {
+      position: fixed;
+      top: 54px; right: 10px;
+      width: 46px; height: 34px;
+      font-size: 15px;
+      pointer-events: auto;
+      z-index: 11;
+      display: none;
+    }
+    body.touch .tbtn.fullscreen { display: flex; }
+    .tbtn.ok {
+      position: fixed;
+      top: 96px; right: 10px;
+      width: 46px; height: 34px;
+      font-size: 12px;
+      pointer-events: auto;
+      z-index: 11;
+    }
+    @media (max-width: 380px) {
+      .tgroup { gap: 8px; }
+      .tbtn { width: 54px; height: 54px; }
+      .tbtn.gas { width: 76px; height: 68px; }
+      .tbtn.brake { width: 56px; height: 48px; }
+      .tbtn.nitro { width: 48px; height: 48px; }
+    }
+  </style>
+  <script type="module" crossorigin src="/nitro-horizon/assets/index-Csaq9muN.js"></script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" width="400" height="280" aria-label="Nitro Horizon"></canvas>
+  </div>
+  <div id="hint">SETAS / WASD · ESPAÇO = NITRO · R = OLHAR PARA TRÁS · SHIFT/CTRL = MARCHA · ESC = PAUSA · F = TELA CHEIA</div>
+  <div id="toast" role="status" aria-live="polite"></div>
+  <div id="touch">
+    <div class="tgroup">
+      <button class="tbtn" data-code="ArrowLeft" aria-label="Esquerda">◀</button>
+      <button class="tbtn" data-code="ArrowRight" aria-label="Direita">▶</button>
+    </div>
+    <div class="tgroup">
+      <button class="tbtn nitro" data-code="Space" aria-label="Nitro">N₂O</button>
+      <button class="tbtn brake" data-code="ArrowDown" aria-label="Frear">FREIO</button>
+      <button class="tbtn gas" data-code="ArrowUp" aria-label="Acelerar">GÁS</button>
+    </div>
+    <button class="tbtn lookback" data-code="KeyR" aria-label="Olhar para trás">RÉ</button>
+    <button class="tbtn fullscreen" data-action="fullscreen" aria-label="Tela cheia">⛶</button>
+    <button class="tbtn pause" data-code="Escape" aria-label="Pausar">II</button>
+    <button class="tbtn ok" data-code="Enter" aria-label="Confirmar">OK</button>
+  </div>
+</body>
+</html>
