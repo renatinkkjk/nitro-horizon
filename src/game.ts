@@ -18,6 +18,7 @@ import { drawCar, drawScenery, spriteWorldSize } from './render/sprites';
 import {
   MAIN_MENU_COUNT,
   PAUSE_OPTION_COUNT,
+  drawCarSelectScreen,
   drawCountdown,
   drawHelpScreen,
   drawPauseScreen,
@@ -37,7 +38,7 @@ import {
 import type { Track } from './world/track';
 import { TRACKS } from './world/tracks';
 
-type GameState = 'title' | 'help' | 'track' | 'race' | 'results' | 'story' | 'storyEnd';
+type GameState = 'title' | 'help' | 'car' | 'track' | 'race' | 'results' | 'story' | 'storyEnd';
 
 /** Pontuação do campeonato do modo história (1º ao 10º). */
 const STORY_POINTS = [15, 12, 10, 8, 6, 5, 4, 3, 2, 1];
@@ -68,6 +69,7 @@ export class Game {
 
   private state: GameState = 'title';
   private menuIndex = 0;
+  private carIndex = 0;
   private trackIndex = 0;
   private race: Race | null = null;
 
@@ -167,10 +169,10 @@ export class Game {
           this.audio.beep(660, 0.08);
           if (this.menuIndex === 0) {
             this.storyActive = false;
-            this.state = 'track';
+            this.state = 'car';
           } else if (this.menuIndex === 1) {
             this.resetStory();
-            this.startStoryRace();
+            this.state = 'car';
           } else {
             this.state = 'help';
           }
@@ -187,12 +189,28 @@ export class Game {
         break;
       }
 
+      case 'car': {
+        this.menuZ += dt * 2800;
+        if (input.leftPressed) this.changeCar(-1);
+        if (input.rightPressed) this.changeCar(1);
+        if (input.confirmPressed) {
+          this.audio.beep(660, 0.08);
+          if (this.storyActive) this.startStoryRace();
+          else this.state = 'track';
+        }
+        if (input.backPressed) {
+          this.storyActive = false;
+          this.state = 'title';
+        }
+        break;
+      }
+
       case 'track': {
         this.menuZ += dt * 2800;
         if (input.leftPressed) this.changeTrack(-1);
         if (input.rightPressed) this.changeTrack(1);
         if (input.confirmPressed) this.startRace();
-        if (input.backPressed) this.state = 'title';
+        if (input.backPressed) this.state = 'car';
         break;
       }
 
@@ -333,6 +351,11 @@ export class Game {
         break;
       }
     }
+  }
+
+  private changeCar(direction: number): void {
+    this.carIndex = (this.carIndex + direction + CAR_SPECS.length) % CAR_SPECS.length;
+    this.audio.beep(520, 0.05, 'square', 0.08);
   }
 
   private changeTrack(direction: number): void {
@@ -524,7 +547,7 @@ export class Game {
   private startRace(): void {
     this.audio.init();
     this.audio.beep(880, 0.16, 'square', 0.16);
-    this.race = new Race(TRACKS[this.trackIndex], CAR_SPECS[0], this.audio);
+    this.race = new Race(TRACKS[this.trackIndex], CAR_SPECS[this.carIndex], this.audio);
     this.paused = false;
     this.storyBannerPending = false;
     this.bannerTimer = 0;
@@ -550,6 +573,11 @@ export class Game {
       case 'help':
         this.renderMenuBackground();
         drawHelpScreen(ctx, this.blink);
+        break;
+
+      case 'car':
+        this.renderMenuBackground();
+        drawCarSelectScreen(ctx, CAR_SPECS, this.carIndex, this.blink, this.storyActive);
         break;
 
       case 'track':
