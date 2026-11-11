@@ -92,13 +92,15 @@ async function main() {
   const blackBg = (r, g, b) => r < 56 && g < 56 && b < 56;
 
   const jobs = [
-    // [nome, caixa] — ajustadas às proporções do sheet
-    ['rx7-player-front', { x: Math.round(sw * 0.11), y: 0, w: Math.round(sw * 0.33), h: Math.round(sh * 0.34) }],
-    ['rx7-player-rear', { x: Math.round(sw * 0.61), y: 0, w: Math.round(sw * 0.28), h: Math.round(sh * 0.34) }],
-    ['mascote', { x: Math.round(sw * 0.04), y: Math.round(sh * 0.65), w: Math.round(sw * 0.25), h: Math.round(sh * 0.35) }],
+    // [nome, caixa generosa] — o recorte por conteúdo encontra os limites
+    ['rx7-player-front', { x: Math.round(sw * 0.06), y: 0, w: Math.round(sw * 0.42), h: Math.round(sh * 0.36) }],
+    ['rx7-player-rear', { x: Math.round(sw * 0.54), y: 0, w: Math.round(sw * 0.45), h: Math.round(sh * 0.36) }],
+    ['mascote', { x: Math.round(sw * 0.02), y: Math.round(sh * 0.6), w: Math.round(sw * 0.29), h: Math.round(sh * 0.4) }],
   ];
   for (const [name, box] of jobs) {
-    const sprite = cut(sheet, box, blackBg);
+    // Threshold ESTRITO: só o preto puro do fundo é removido; os pretos
+    // internos do carro (contornos, janelas, para-choques) ficam intactos.
+    const sprite = cut(sheet, box, (r, g, b) => Math.max(r, g, b) < 10);
     await sprite.quality(90).writeAsync(path.join(OUT, `${name}.png`));
     console.log(name, sprite.bitmap.width, 'x', sprite.bitmap.height);
   }
