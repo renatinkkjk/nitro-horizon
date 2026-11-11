@@ -18,7 +18,6 @@ import { drawCar, drawScenery, spriteWorldSize } from './render/sprites';
 import {
   MAIN_MENU_COUNT,
   PAUSE_OPTION_COUNT,
-  drawCarSelectScreen,
   drawCountdown,
   drawHelpScreen,
   drawPauseScreen,
@@ -38,7 +37,7 @@ import {
 import type { Track } from './world/track';
 import { TRACKS } from './world/tracks';
 
-type GameState = 'title' | 'help' | 'car' | 'track' | 'race' | 'results' | 'story' | 'storyEnd';
+type GameState = 'title' | 'help' | 'track' | 'race' | 'results' | 'story' | 'storyEnd';
 
 /** Pontuação do campeonato do modo história (1º ao 10º). */
 const STORY_POINTS = [15, 12, 10, 8, 6, 5, 4, 3, 2, 1];
@@ -69,7 +68,6 @@ export class Game {
 
   private state: GameState = 'title';
   private menuIndex = 0;
-  private carIndex = 0;
   private trackIndex = 0;
   private race: Race | null = null;
 
@@ -169,10 +167,10 @@ export class Game {
           this.audio.beep(660, 0.08);
           if (this.menuIndex === 0) {
             this.storyActive = false;
-            this.state = 'car';
+            this.state = 'track';
           } else if (this.menuIndex === 1) {
             this.resetStory();
-            this.state = 'car';
+            this.startStoryRace();
           } else {
             this.state = 'help';
           }
@@ -189,28 +187,12 @@ export class Game {
         break;
       }
 
-      case 'car': {
-        this.menuZ += dt * 2800;
-        if (input.leftPressed) this.changeCar(-1);
-        if (input.rightPressed) this.changeCar(1);
-        if (input.confirmPressed) {
-          this.audio.beep(660, 0.08);
-          if (this.storyActive) this.startStoryRace();
-          else this.state = 'track';
-        }
-        if (input.backPressed) {
-          this.storyActive = false;
-          this.state = 'title';
-        }
-        break;
-      }
-
       case 'track': {
         this.menuZ += dt * 2800;
         if (input.leftPressed) this.changeTrack(-1);
         if (input.rightPressed) this.changeTrack(1);
         if (input.confirmPressed) this.startRace();
-        if (input.backPressed) this.state = 'car';
+        if (input.backPressed) this.state = 'title';
         break;
       }
 
@@ -351,11 +333,6 @@ export class Game {
         break;
       }
     }
-  }
-
-  private changeCar(direction: number): void {
-    this.carIndex = (this.carIndex + direction + CAR_SPECS.length) % CAR_SPECS.length;
-    this.audio.beep(520, 0.05, 'square', 0.08);
   }
 
   private changeTrack(direction: number): void {
@@ -500,10 +477,10 @@ export class Game {
       const rect = canvas.getBoundingClientRect();
       const x = ((event.clientX - rect.left) / rect.width) * WIDTH;
       const y = ((event.clientY - rect.top) / rect.height) * HEIGHT;
-      if (x < 58 || x > 262 || y < 80 || y > 164) return;
-      const index = Math.round((y - 92) / 20);
+      if (x < 72 || x > 327 || y < 100 || y > 230) return;
+      const index = Math.round((y - 115) / 25);
       if (index < 0 || index >= PAUSE_OPTION_COUNT) return;
-      if (Math.abs(y - (92 + index * 20)) > 10) return;
+      if (Math.abs(y - (115 + index * 25)) > 10) return;
       this.pauseIndex = index;
       this.choosePauseOption();
     });
@@ -547,7 +524,7 @@ export class Game {
   private startRace(): void {
     this.audio.init();
     this.audio.beep(880, 0.16, 'square', 0.16);
-    this.race = new Race(TRACKS[this.trackIndex], CAR_SPECS[this.carIndex], this.audio);
+    this.race = new Race(TRACKS[this.trackIndex], CAR_SPECS[0], this.audio);
     this.paused = false;
     this.storyBannerPending = false;
     this.bannerTimer = 0;
@@ -573,11 +550,6 @@ export class Game {
       case 'help':
         this.renderMenuBackground();
         drawHelpScreen(ctx, this.blink);
-        break;
-
-      case 'car':
-        this.renderMenuBackground();
-        drawCarSelectScreen(ctx, CAR_SPECS, this.carIndex, this.blink, this.storyActive);
         break;
 
       case 'track':
@@ -854,6 +826,7 @@ export class Game {
         style: item.racer.spec.style,
       }, {
         lean: clamp((item.racer.targetOffset - item.racer.offset) * 0.9, -0.4, 0.4) * 0.085,
+        view: lookBack ? 'front' : 'rear',
       });
     }
   }

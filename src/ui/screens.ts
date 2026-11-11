@@ -1,45 +1,39 @@
-import type { Race, Racer } from '../race/race';
-import type { CarSpec } from '../entities/carspecs';
+﻿import type { Race, Racer } from '../race/race';
 import type { Track } from '../world/track';
-import { drawCar } from '../render/sprites';
 import { formatTime, panel, text, traceTrack } from '../render/hud';
 import { WIDTH, HEIGHT } from '../game';
+import mascotUrl from '../assets/mascote.png';
 
 function title(ctx: CanvasRenderingContext2D, value: string, y: number, size: number, color: string): void {
   ctx.font = `bold ${size}px monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(0,0,0,0.75)';
-  ctx.fillText(value, 162, y + 3);
+  ctx.fillText(value, WIDTH / 2 + 2, y + 3);
   ctx.fillStyle = color;
-  ctx.fillText(value, 160, y);
+  ctx.fillText(value, WIDTH / 2, y);
 }
 
-function pips(ctx: CanvasRenderingContext2D, x: number, y: number, value: number, max = 4): void {
-  for (let i = 0; i < max; i += 1) {
-    ctx.fillStyle = i < value ? '#22e0ff' : '#1c2340';
-    ctx.fillRect(x + i * 9, y - 6, 7, 6);
+/** Mascote CEPK (imagem carregada sob demanda). */
+let mascotImage: HTMLImageElement | null = null;
+function drawMascot(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  baseY: number,
+  height: number,
+): void {
+  if (!mascotImage) {
+    mascotImage = new Image();
+    mascotImage.decoding = 'async';
+    mascotImage.src = mascotUrl;
   }
-}
-
-/** Quebra um texto em linhas que cabem na largura informada (fonte já configurada). */
-function wrapText(ctx: CanvasRenderingContext2D, value: string, maxWidth: number): string[] {
-  const words = value.split(' ');
-  const lines: string[] = [];
-  let line = '';
-
-  for (const word of words) {
-    const next = line ? `${line} ${word}` : word;
-    if (line && ctx.measureText(next).width > maxWidth) {
-      lines.push(line);
-      line = word;
-    } else {
-      line = next;
-    }
-  }
-
-  if (line) lines.push(line);
-  return lines;
+  if (!mascotImage.complete || mascotImage.naturalWidth === 0) return;
+  const scale = height / mascotImage.naturalHeight;
+  const w = mascotImage.naturalWidth * scale;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(mascotImage, Math.round(cx - w / 2), Math.round(baseY - height), Math.round(w), Math.round(height));
+  ctx.restore();
 }
 
 /** Opções do menu principal. */
@@ -84,6 +78,9 @@ export function drawTitleScreen(
   ctx.textAlign = 'center';
   ctx.fillStyle = '#4a5480';
   ctx.fillText('↑ ↓ NAVEGAR · ENTER CONFIRMAR · F TELA CHEIA', WIDTH / 2, 266);
+
+  // Mascote CEPK ao lado direito do menu.
+  drawMascot(ctx, 360, 252, 86);
 }
 
 export function drawHelpScreen(ctx: CanvasRenderingContext2D, blink: boolean): void {
@@ -115,137 +112,6 @@ export function drawHelpScreen(ctx: CanvasRenderingContext2D, blink: boolean): v
   });
 
   if (blink) text(ctx, 'ENTER / ESC PARA VOLTAR', 200, 266, 9, '#ffd23f', 'center');
-}
-
-export function drawCarSelectScreen(
-  ctx: CanvasRenderingContext2D,
-  cars: CarSpec[],
-  index: number,
-  blink: boolean,
-  story = false,
-): void {
-  ctx.fillStyle = 'rgba(5,6,12,0.68)';
-  ctx.fillRect(0, 0, 400, 280);
-
-  title(ctx, story ? 'MODO HISTÓRIA · ESCOLHA O CARRO' : 'ESCOLHA SEU CARRO', 30, story ? 12 : 14, '#ffd23f');
-
-  const car = cars[index];
-
-  // Painel-esquerdo: showroom com o carro grande.
-  panel(ctx, 10, 40, 218, 128, 0.94);
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(11, 41, 215, 125);
-  ctx.clip();
-
-  const spot = ctx.createRadialGradient(119, 113, 5, 119, 113, 98);
-  spot.addColorStop(0, 'rgba(34,224,255,0.16)');
-  spot.addColorStop(1, 'rgba(34,224,255,0)');
-  ctx.fillStyle = spot;
-  ctx.fillRect(11, 41, 215, 125);
-
-  // Linhas de velocidade discretas ao fundo.
-  ctx.strokeStyle = 'rgba(34,224,255,0.12)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 4; i += 1) {
-    const y = 78 + i * 16;
-    ctx.beginPath();
-    ctx.moveTo(18, y);
-    ctx.lineTo(48 + i * 6, y);
-    ctx.moveTo(190 - i * 6, y);
-    ctx.lineTo(220, y);
-    ctx.stroke();
-  }
-
-  ctx.strokeStyle = 'rgba(34,224,255,0.4)';
-  ctx.beginPath();
-  ctx.ellipse(119, 154, 80, 7, 0, 0, Math.PI * 2);
-  ctx.stroke();
-
-  const preview =
-    car.style === 'rx7'
-      ? { view: 'front' as const }
-      : {};
-  drawCar(ctx, 119, 151, 155, 88, { body: car.body, accent: car.accent, style: car.style }, preview);
-  ctx.restore();
-
-  // Painel-direito: nome, perfil e atributos.
-  panel(ctx, 235, 40, 155, 128, 0.88);
-
-  ctx.font = 'bold 11px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(car.name, 313, 59);
-
-  ctx.font = '8px monospace';
-  ctx.fillStyle = '#8b93bd';
-  const tagline = wrapText(ctx, car.tagline, 138);
-  tagline.slice(0, 2).forEach((line, i) => {
-    ctx.fillText(line, 313, 71 + i * 9);
-  });
-
-  const stats: Array<[string, number]> = [
-    ['VELOCIDADE', car.stats.velocidade],
-    ['ACELERAÇÃO', car.stats.aceleracao],
-    ['GRIP', car.stats.grip],
-    ['TANQUE', car.stats.tanque],
-    ['CONSUMO', car.stats.consumo],
-  ];
-
-  stats.forEach(([label, value], i) => {
-    const sy = 99 + i * 11;
-    text(ctx, label, 243, sy, 8, '#8b93bd');
-    pips(ctx, 323, sy, value);
-  });
-
-  text(ctx, `NITROS: ${car.nitros}`, 243, 158, 8, '#22e0ff');
-  text(
-    ctx,
-    `MÁX: ${Math.round((car.maxSpeed / 11800) * 300)} KM/H`,
-    383,
-    158,
-    8,
-    '#22e0ff',
-    'right',
-  );
-
-  // Faixa inferior: os quatro carros em cartões compactos.
-  const cardW = 90;
-  const gap = 8;
-  const startX = 9;
-  const y = 178;
-  const h = 60;
-
-  cars.forEach((item, i) => {
-    const x = startX + i * (cardW + gap);
-    const selected = i === index;
-    panel(ctx, x, y, cardW, h, selected ? 0.96 : 0.55);
-    if (selected) {
-      ctx.strokeStyle = '#22e0ff';
-      ctx.lineWidth = 2;
-      ctx.strokeRect(x + 1, y + 1, cardW - 2, h - 2);
-    }
-
-    drawCar(ctx, x + cardW / 2, y + 39, 52, 30, {
-      body: item.body,
-      accent: item.accent,
-      style: item.style,
-      ...(item.style === 'rx7' ? { view: 'rear' as const } : {}),
-    });
-
-    ctx.font = 'bold 8px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = selected ? '#ffffff' : '#8b93bd';
-    ctx.fillText(item.name, x + cardW / 2, y + h - 7);
-  });
-
-  if (story) {
-    text(ctx, 'DESERTO → LITORAL → CIDADE', 200, 253, 8, '#8b93bd', 'center', false);
-  }
-
-  if (blink) {
-    text(ctx, '◀ ▶ TROCAR · ENTER CONFIRMAR · F TELA CHEIA', 200, 268, 8, '#ffd23f', 'center');
-  }
 }
 
 export function drawTrackSelectScreen(
@@ -528,6 +394,7 @@ export function drawPauseScreen(
 
   panel(ctx, 72, 50, 255, 183, 0.9);
   title(ctx, 'PAUSA', 85, 25, '#22e0ff');
+  drawMascot(ctx, 106, 100, 48);
 
   options.forEach((option, i) => {
     const y = 115 + i * 25;

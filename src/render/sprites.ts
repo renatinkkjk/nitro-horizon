@@ -1,7 +1,9 @@
 import type { CarStyle } from '../entities/carspecs';
+import { drawSpriteCar, type CarView } from './carsprites';
 import { shade } from './color';
 import type { SpriteKind } from './pseudo3d';
-import { drawRx7, type Rx7View } from './rx7';
+
+export type { CarView };
 
 export interface CarPaint {
   body: string;
@@ -14,8 +16,8 @@ export interface CarDrawOptions {
   nitro?: boolean;
   /** Inclinação lateral em radianos, aplicada ao redor da base do carro. */
   lean?: number;
-  /** Vista específica para carros com sprites dedicados (RX-7). */
-  view?: Rx7View;
+  /** Vista do sprite: traseira (padrão) ou frontal. */
+  view?: CarView;
   player?: boolean;
 }
 
@@ -44,12 +46,9 @@ export function drawCar(
 ): void {
   if (w < 2 || h < 2) return;
 
-  // O RX-7 do jogador (e o showroom) usa os sprites fornecidos; as IAs de RX-7
-  // continuam com a arte procedural colorida até receberem sprites próprios.
-  if (paint.style === 'rx7' && opts.view) {
-    drawRx7(ctx, cx, baseY, w, h, paint, opts);
-    return;
-  }
+  // Estilos com sprite dedicado (RX-7 do jogador, RX-7 vermelho das IAs e os
+  // três rivais). Sem vista definida cai no desenho procedural.
+  if (drawSpriteCar(ctx, cx, baseY, w, h, paint, opts)) return;
 
   const half = w / 2;
   const style = paint.style ?? 'gt';
