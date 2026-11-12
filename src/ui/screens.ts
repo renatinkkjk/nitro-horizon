@@ -189,10 +189,7 @@ export function drawCarSelectScreen(
   ctx.ellipse(119, 154, 80, 7, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  const preview =
-    car.style === 'rx7'
-      ? { view: 'front' as const }
-      : {};
+  const preview = { view: 'side' as const };
   drawCar(ctx, 119, 151, 155, 88, { body: car.body, accent: car.accent, style: car.style }, preview);
   ctx.restore();
 
@@ -257,7 +254,7 @@ export function drawCarSelectScreen(
       body: item.body,
       accent: item.accent,
       style: item.style,
-      ...(item.style === 'rx7' ? { view: 'rear' as const } : {}),
+      ...{ view: 'side' as const },
     });
 
     ctx.font = 'bold 8px monospace';

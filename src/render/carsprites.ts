@@ -1,44 +1,52 @@
-import blueFrontUrl from '../assets/bot-blue-front.png';
-import blueRearUrl from '../assets/bot-blue-rear.png';
-import purpleFrontUrl from '../assets/bot-purple-front.png';
-import purpleRearUrl from '../assets/bot-purple-rear.png';
 import rx7BotFrontUrl from '../assets/rx7-bot-front.png';
 import rx7BotRearUrl from '../assets/rx7-bot-rear.png';
+import rx7BotSideUrl from '../assets/rx7-bot-side.png';
 import rx7FrontUrl from '../assets/rx7-front.png';
+import rx7PlayerSideUrl from '../assets/rx7-player-side.png';
 import rx7RearUrl from '../assets/rx7-rear.png';
-import silverFrontUrl from '../assets/bot-silver-front.png';
-import silverRearUrl from '../assets/bot-silver-rear.png';
+import titaFrontUrl from '../assets/bot-tita-front.png';
+import titaRearUrl from '../assets/bot-tita-rear.png';
+import titaSideUrl from '../assets/bot-tita-side.png';
+import trovaoFrontUrl from '../assets/bot-trovao-front.png';
+import trovaoRearUrl from '../assets/bot-trovao-rear.png';
+import trovaoSideUrl from '../assets/bot-trovao-side.png';
+import vespaFrontUrl from '../assets/bot-vespa-front.png';
+import vespaRearUrl from '../assets/bot-vespa-rear.png';
+import vespaSideUrl from '../assets/bot-vespa-side.png';
 import type { CarStyle } from '../entities/carspecs';
 import type { CarDrawOptions, CarPaint } from './sprites';
 
-/** Vistas disponíveis dos carros: traseira (padrão) e frontal. */
-export type CarView = 'rear' | 'front';
+/** Vistas disponíveis dos carros: traseira, frontal e lateral. */
+export type CarView = 'rear' | 'front' | 'side';
 
 interface SpritePair {
   front: string;
   rear: string;
+  /** Vista lateral (usada na tela de seleção de carros). */
+  side: string;
 }
 
-const PLAYER_RX7: SpritePair = { front: rx7FrontUrl, rear: rx7RearUrl };
-const BOT_RX7: SpritePair = { front: rx7BotFrontUrl, rear: rx7BotRearUrl };
-const BLUE_HATCH: SpritePair = { front: blueFrontUrl, rear: blueRearUrl };
-const PURPLE_MUSCLE: SpritePair = { front: purpleFrontUrl, rear: purpleRearUrl };
-const SILVER_GT: SpritePair = { front: silverFrontUrl, rear: silverRearUrl };
+const PLAYER_RX7: SpritePair = { front: rx7FrontUrl, rear: rx7RearUrl, side: rx7PlayerSideUrl };
+const BOT_RX7: SpritePair = { front: rx7BotFrontUrl, rear: rx7BotRearUrl, side: rx7BotSideUrl };
+const VESPA: SpritePair = { front: vespaFrontUrl, rear: vespaRearUrl, side: vespaSideUrl };
+const TROVAO: SpritePair = { front: trovaoFrontUrl, rear: trovaoRearUrl, side: trovaoSideUrl };
+const TITA: SpritePair = { front: titaFrontUrl, rear: titaRearUrl, side: titaSideUrl };
 
 /**
- * Sprite associado a cada estilo. O RX-7 do jogador usa a arte amarela CEPK;
- * os RX-7 das IAs usam a vermelha. Estilos sem sprite caem no desenho procedural.
+ * Sprite associado a cada estilo. Cada carro tem arte propria (frente,
+ * lateral e traseira) extraida dos sprites novos. Estilos sem sprite caem
+ * no desenho procedural.
  */
 function pairFor(style: CarStyle, isPlayer: boolean): SpritePair | null {
   switch (style) {
     case 'rx7':
       return isPlayer ? PLAYER_RX7 : BOT_RX7;
     case 'light':
-      return BLUE_HATCH;
+      return VESPA;
     case 'muscle':
-      return PURPLE_MUSCLE;
+      return TROVAO;
     case 'turbo':
-      return SILVER_GT;
+      return TITA;
     default:
       return null;
   }
@@ -59,11 +67,11 @@ function imageFor(key: string, url: string): HTMLImageElement {
 
 // Pré-carrega todas as vistas assim que o módulo é importado.
 [
-  PLAYER_RX7.front, PLAYER_RX7.rear,
-  BOT_RX7.front, BOT_RX7.rear,
-  BLUE_HATCH.front, BLUE_HATCH.rear,
-  PURPLE_MUSCLE.front, PURPLE_MUSCLE.rear,
-  SILVER_GT.front, SILVER_GT.rear,
+  PLAYER_RX7.front, PLAYER_RX7.rear, PLAYER_RX7.side,
+  BOT_RX7.front, BOT_RX7.rear, BOT_RX7.side,
+  VESPA.front, VESPA.rear, VESPA.side,
+  TROVAO.front, TROVAO.rear, TROVAO.side,
+  TITA.front, TITA.rear, TITA.side,
 ].forEach((url, index) => imageFor(`preload-${index}`, url));
 
 /**
@@ -86,7 +94,8 @@ export function drawSpriteCar(
   if (!pair || !opts.view) return false;
 
   const view: CarView = opts.view;
-  const image = imageFor(`${paint.style}-${opts.player ? 'p' : 'b'}-${view}`, pair[view]);
+  const imageUrl = view === 'side' ? pair.side : pair[view];
+  const image = imageFor(`${paint.style}-${opts.player ? 'p' : 'b'}-${view}`, imageUrl);
   if (!image.complete || image.naturalWidth === 0) return true;
 
   // Escala única por vista: o carro não muda de tamanho ao olhar para trás.
