@@ -180,18 +180,18 @@ function columnClusters(image, maxGap = 25) {
 const JOBS = [
   {
     file: 'carro-verde.png',
-    label: 'VERDE -> TROVAO',
-    names: ['bot-trovao-front.png', 'bot-trovao-side.png', 'bot-trovao-rear.png'],
+    label: 'VERDE -> HEMICUDA',
+    names: ['bot-hemicuda-front.png', 'bot-hemicuda-side.png', 'bot-hemicuda-rear.png'],
   },
   {
     file: 'carro-laranja.png',
-    label: 'LARANJA -> VESPA',
-    names: ['bot-vespa-front.png', 'bot-vespa-side.png', 'bot-vespa-rear.png'],
+    label: 'LARANJA -> CIVIC',
+    names: ['bot-civic-front.png', 'bot-civic-side.png', 'bot-civic-rear.png'],
   },
   {
     file: 'carro-azul.png',
-    label: 'AZUL -> TITA',
-    names: ['bot-tita-front.png', 'bot-tita-side.png', 'bot-tita-rear.png'],
+    label: 'AZUL -> SALEEN',
+    names: ['bot-saleen-front.png', 'bot-saleen-side.png', 'bot-saleen-rear.png'],
   },
   {
     file: 'carro-vermelho.png',

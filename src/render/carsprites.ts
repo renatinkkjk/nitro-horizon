@@ -22,15 +22,15 @@ const rx7BotSideUrl = sprite('rx7-bot-side.png');
 const rx7FrontUrl = sprite('rx7-front.png');
 const rx7PlayerSideUrl = sprite('rx7-player-side.png');
 const rx7RearUrl = sprite('rx7-rear.png');
-const titaFrontUrl = sprite('bot-tita-front.png');
-const titaRearUrl = sprite('bot-tita-rear.png');
-const titaSideUrl = sprite('bot-tita-side.png');
-const trovaoFrontUrl = sprite('bot-trovao-front.png');
-const trovaoRearUrl = sprite('bot-trovao-rear.png');
-const trovaoSideUrl = sprite('bot-trovao-side.png');
-const vespaFrontUrl = sprite('bot-vespa-front.png');
-const vespaRearUrl = sprite('bot-vespa-rear.png');
-const vespaSideUrl = sprite('bot-vespa-side.png');
+const hemicudaFrontUrl = sprite('bot-hemicuda-front.png');
+const hemicudaRearUrl = sprite('bot-hemicuda-rear.png');
+const hemicudaSideUrl = sprite('bot-hemicuda-side.png');
+const civicFrontUrl = sprite('bot-civic-front.png');
+const civicRearUrl = sprite('bot-civic-rear.png');
+const civicSideUrl = sprite('bot-civic-side.png');
+const saleenFrontUrl = sprite('bot-saleen-front.png');
+const saleenRearUrl = sprite('bot-saleen-rear.png');
+const saleenSideUrl = sprite('bot-saleen-side.png');
 
 /** Vistas disponíveis dos carros: traseira, frontal e lateral. */
 export type CarView = 'rear' | 'front' | 'side';
@@ -44,9 +44,9 @@ interface SpritePair {
 
 const PLAYER_RX7: SpritePair = { front: rx7FrontUrl, rear: rx7RearUrl, side: rx7PlayerSideUrl };
 const BOT_RX7: SpritePair = { front: rx7BotFrontUrl, rear: rx7BotRearUrl, side: rx7BotSideUrl };
-const VESPA: SpritePair = { front: vespaFrontUrl, rear: vespaRearUrl, side: vespaSideUrl };
-const TROVAO: SpritePair = { front: trovaoFrontUrl, rear: trovaoRearUrl, side: trovaoSideUrl };
-const TITA: SpritePair = { front: titaFrontUrl, rear: titaRearUrl, side: titaSideUrl };
+const HEMICUDA: SpritePair = { front: hemicudaFrontUrl, rear: hemicudaRearUrl, side: hemicudaSideUrl };
+const CIVIC: SpritePair = { front: civicFrontUrl, rear: civicRearUrl, side: civicSideUrl };
+const SALEEN: SpritePair = { front: saleenFrontUrl, rear: saleenRearUrl, side: saleenSideUrl };
 
 /**
  * Sprite associado a cada estilo. Cada carro tem arte propria (frente,
@@ -58,11 +58,11 @@ function pairFor(style: CarStyle, isPlayer: boolean): SpritePair | null {
     case 'rx7':
       return isPlayer ? PLAYER_RX7 : BOT_RX7;
     case 'light':
-      return VESPA;
+      return CIVIC;
     case 'muscle':
-      return TROVAO;
+      return HEMICUDA;
     case 'turbo':
-      return TITA;
+      return SALEEN;
     default:
       return null;
   }
@@ -85,9 +85,9 @@ function imageFor(key: string, url: string): HTMLImageElement {
 [
   PLAYER_RX7.front, PLAYER_RX7.rear, PLAYER_RX7.side,
   BOT_RX7.front, BOT_RX7.rear, BOT_RX7.side,
-  VESPA.front, VESPA.rear, VESPA.side,
-  TROVAO.front, TROVAO.rear, TROVAO.side,
-  TITA.front, TITA.rear, TITA.side,
+  CIVIC.front, CIVIC.rear, CIVIC.side,
+  HEMICUDA.front, HEMICUDA.rear, HEMICUDA.side,
+  SALEEN.front, SALEEN.rear, SALEEN.side,
 ].forEach((url, index) => imageFor(`preload-${index}`, url));
 
 /**
