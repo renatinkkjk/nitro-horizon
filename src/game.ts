@@ -657,6 +657,8 @@ export class Game {
     ctx.translate(sx, sy);
     this.drawTireSmoke();
     this.drawPlayerCar(race, lookBack);
+    // A chama vai por cima do carro: sai dos escapamentos, na traseira.
+    this.drawNitroFlame(race, lookBack);
     this.drawSpeedFx(race);
     this.drawExhaust();
     ctx.restore();
@@ -891,14 +893,15 @@ export class Game {
     const outward = 6 + 10 * strength;
     // A fumaça escorrega para fora da curva apenas em drift.
     const push = isDrift ? -turnDir * (10 + 24 * strength) : 0;
-    // Posição: traseira do carro (centro x, y logo abaixo do escapamento) ou lateral em drift.
-    const backY = 272; // baseY + pequeno offset, dentro do canvas 280
+    // Posição: sai dos PNEUS traseiros (dois, um de cada lado) na traseira.
+    const tire = Math.random() < 0.5 ? -1 : 1;
+    const backY = 263; // altura do contato do pneu com o asfalto
     const lateralOffset = isDrift ? (37 + Math.random() * 5) : 0;
     this.smoke.push({
-      x: 200 + side * lateralOffset,
+      x: 200 + tire * 34 + (isDrift ? side * lateralOffset : 0),
       y: backY + Math.random() * 4,
-      vx: isDrift ? side * outward * (0.5 + Math.random()) + push + (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 3,
-      vy: -(3 + 10 * strength) - Math.random() * 5,
+      vx: isDrift ? side * outward * (0.5 + Math.random()) + push + (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 5,
+      vy: -(2 + 9 * strength) - Math.random() * 5,
       life: 0,
       maxLife: 0.45 + Math.random() * 0.35 + strength * 0.25,
       size: 1 + Math.floor(Math.random() * (strength > 0.7 ? 2 : 1)),
@@ -923,29 +926,27 @@ export class Game {
 
   private updateExhaust(dt: number, race: Race): void {
     const player = race.player;
-    const isRx7 = player.spec.style === 'rx7';
     const nitroActive = player.nitroTimer > 0;
 
     // Limpa partículas antigas
     this.exhaustParticles = this.exhaustParticles.filter((p) => p.life < p.maxLife);
 
-    if (nitroActive && isRx7) {
-      // Emite partículas do escapamento do RX-7
+    if (nitroActive) {
+      // Emite partículas do escapamento (dois bicos, um de cada lado).
       this.exhaustTimer += dt;
-      const emitRate = 8; // partículas por frame quando nitro ativo
+      const emitRate = 26; // partículas por segundo quando o nitro está ativo
       while (this.exhaustTimer >= (1 / emitRate)) {
         this.exhaustTimer -= 1 / emitRate;
-        const exhaustY = 260; // escapamento na traseira do RX-7 (dentro do carro, perto do chão)
-        const exhaustX = 200; // centro do carro
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 2 + Math.random() * 2;
+        const tip = Math.random() < 0.5 ? -14 : 14;
+        const angle = (Math.random() - 0.5) * 1.4;
+        const speed = 3 + Math.random() * 3;
         this.exhaustParticles.push({
-          x: exhaustX,
-          y: exhaustY,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed - 1,
+          x: 200 + tip,
+          y: 254,
+          vx: angle * speed,
+          vy: 2 + Math.random() * 3,
           life: 0,
-          maxLife: 0.6 + Math.random() * 0.4,
+          maxLife: 0.35 + Math.random() * 0.3,
           size: 1 + Math.random() * 2,
         });
       }
@@ -961,6 +962,30 @@ export class Game {
     }
   }
 
+  /**
+   * Chama de nitro saindo dos escapamentos. Fica logo atrás do carro, na
+   * altura dos bicos, e treme com o tempo.
+   */
+  private drawNitroFlame(race: Race, lookBack: boolean): void {
+    if (race.player.nitroTimer <= 0) return;
+    if (lookBack) return; // olhando para trás vemos a FRENTE do carro
+    const ctx = this.ctx;
+    const flick = Math.sin(this.time * 42) * 0.5 + 0.5;
+    const len = 10 + flick * 9;
+    for (const tip of [-14, 14]) {
+      const x = 200 + tip;
+      const y = 250;
+      ctx.fillStyle = '#ff5a12';
+      ctx.fillRect(Math.round(x - 3), Math.round(y), 6, Math.round(len));
+      ctx.fillStyle = '#ffa32e';
+      ctx.fillRect(Math.round(x - 2), Math.round(y), 4, Math.round(len * 0.72));
+      ctx.fillStyle = '#ffe066';
+      ctx.fillRect(Math.round(x - 1), Math.round(y), 2, Math.round(len * 0.42));
+      ctx.fillStyle = '#fffbe8';
+      ctx.fillRect(Math.round(x - 1), Math.round(y), 2, Math.round(len * 0.18));
+    }
+  }
+
   private drawExhaust(): void {
     const ctx = this.ctx;
     if (this.exhaustParticles.length === 0) return;
@@ -968,7 +993,7 @@ export class Game {
       const t = puff.life / puff.maxLife;
       const alpha = 1 - t;
       const size = Math.max(1, puff.size * (1 - t));
-      ctx.fillStyle = `rgba(200, 200, 200, ${alpha * 0.8})`;
+      ctx.fillStyle = `rgba(255, ${Math.round(150 + 80 * (1 - t))}, 60, ${alpha * 0.85})`;
       ctx.fillRect(
         Math.round(puff.x - size / 2),
         Math.round(puff.y - size / 2),
@@ -982,7 +1007,7 @@ export class Game {
     const ctx = this.ctx;
     for (const puff of this.smoke) {
       const t = puff.life / puff.maxLife;
-      const alpha = Math.max(0, (1 - t) * (0.18 + 0.32 * puff.strength));
+      const alpha = Math.max(0, (1 - t) * (0.3 + 0.45 * puff.strength));
       const size = Math.max(1, Math.round(puff.size + puff.grow * t));
       ctx.fillStyle = `rgba(224, 228, 236, ${alpha.toFixed(3)})`;
       ctx.fillRect(

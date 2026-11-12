@@ -17,7 +17,9 @@ const fs = require('fs');
 const path = require('path');
 
 const SRC_DIR = path.join(__dirname, 'sources');
-const OUT = path.join(__dirname, '..', 'src', 'assets');
+// Os sprites saem direto em public/sprites (nomes estáveis, servidos pelo
+// GitHub Pages) — assim um JS em cache nunca aponta para um arquivo 404.
+const OUT = path.join(__dirname, '..', 'public', 'sprites');
 
 /** Remove o chunk eXIf (o pngjs do jimp engasga com ele). */
 function stripChunk(buf, type) {
@@ -336,6 +338,10 @@ async function main() {
       await sprite.quality(90).writeAsync(path.join(OUT, job.names[i]));
       console.log(job.label, job.names[i], sprite.bitmap.width + 'x' + sprite.bitmap.height);
     }
+    // O RX-7 do jogador usa a mesma arte vermelha dos rivais.
+    await fs.promises.copyFile(path.join(OUT, 'rx7-bot-front.png'), path.join(OUT, 'rx7-front.png'));
+    await fs.promises.copyFile(path.join(OUT, 'rx7-bot-rear.png'), path.join(OUT, 'rx7-rear.png'));
+    await fs.promises.copyFile(path.join(OUT, 'rx7-bot-side.png'), path.join(OUT, 'rx7-player-side.png'));
   }
 }
 

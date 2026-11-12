@@ -1,20 +1,36 @@
-import rx7BotFrontUrl from '../assets/rx7-bot-front.png';
-import rx7BotRearUrl from '../assets/rx7-bot-rear.png';
-import rx7BotSideUrl from '../assets/rx7-bot-side.png';
-import rx7FrontUrl from '../assets/rx7-front.png';
-import rx7PlayerSideUrl from '../assets/rx7-player-side.png';
-import rx7RearUrl from '../assets/rx7-rear.png';
-import titaFrontUrl from '../assets/bot-tita-front.png';
-import titaRearUrl from '../assets/bot-tita-rear.png';
-import titaSideUrl from '../assets/bot-tita-side.png';
-import trovaoFrontUrl from '../assets/bot-trovao-front.png';
-import trovaoRearUrl from '../assets/bot-trovao-rear.png';
-import trovaoSideUrl from '../assets/bot-trovao-side.png';
-import vespaFrontUrl from '../assets/bot-vespa-front.png';
-import vespaRearUrl from '../assets/bot-vespa-rear.png';
-import vespaSideUrl from '../assets/bot-vespa-side.png';
 import type { CarStyle } from '../entities/carspecs';
 import type { CarDrawOptions, CarPaint } from './sprites';
+
+/**
+ * URLs dos sprites com NOME ESTÁVEL (public/sprites), sem hash do Vite.
+ *
+ * Com nomes com hash, um index.html em cache aponta para um JS antigo e os
+ * PNGs com hash antigo somem no deploy seguinte (404) — aí os carros
+ * simplesmente APARECEM. Com nome fixo, qualquer JS em cache ainda acha
+ * os arquivos. O ?v= invalida o cache do arquivo quando a arte muda.
+ */
+const SPRITE_BASE = '/nitro-horizon/sprites';
+const SPRITE_V = 4;
+
+function sprite(name: string): string {
+  return `${SPRITE_BASE}/${name}?v=${SPRITE_V}`;
+}
+
+const rx7BotFrontUrl = sprite('rx7-bot-front.png');
+const rx7BotRearUrl = sprite('rx7-bot-rear.png');
+const rx7BotSideUrl = sprite('rx7-bot-side.png');
+const rx7FrontUrl = sprite('rx7-front.png');
+const rx7PlayerSideUrl = sprite('rx7-player-side.png');
+const rx7RearUrl = sprite('rx7-rear.png');
+const titaFrontUrl = sprite('bot-tita-front.png');
+const titaRearUrl = sprite('bot-tita-rear.png');
+const titaSideUrl = sprite('bot-tita-side.png');
+const trovaoFrontUrl = sprite('bot-trovao-front.png');
+const trovaoRearUrl = sprite('bot-trovao-rear.png');
+const trovaoSideUrl = sprite('bot-trovao-side.png');
+const vespaFrontUrl = sprite('bot-vespa-front.png');
+const vespaRearUrl = sprite('bot-vespa-rear.png');
+const vespaSideUrl = sprite('bot-vespa-side.png');
 
 /** Vistas disponíveis dos carros: traseira, frontal e lateral. */
 export type CarView = 'rear' | 'front' | 'side';

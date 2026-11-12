@@ -4,7 +4,9 @@ import type { Track } from '../world/track';
 import { drawCar } from '../render/sprites';
 import { formatTime, panel, text, traceTrack } from '../render/hud';
 import { WIDTH, HEIGHT } from '../game';
-import mascotUrl from '../assets/mascote.png';
+
+/** Mascote com URL estável (mesma razão dos sprites: sobrevive ao cache). */
+const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=4';
 
 function title(ctx: CanvasRenderingContext2D, value: string, y: number, size: number, color: string): void {
   ctx.font = `bold ${size}px monospace`;

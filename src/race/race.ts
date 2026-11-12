@@ -9,6 +9,10 @@ import { Gearbox } from './gearbox';
 export const CAR_Z_SIZE = 240;
 export const CAR_X_SIZE = 0.26;
 
+/** Nitro: quanto o carro ganha de velocidade máxima e de aceleração. */
+export const NITRO_SPEED_BOOST = 1.35;
+export const NITRO_ACCEL = 2.6;
+
 export interface Racer {
   id: number;
   name: string;
@@ -222,15 +226,18 @@ export class Race {
     if (input.right) steer += 1;
     p.steer = lerp(p.steer, steer, Math.min(1, dt * 14));
     // Redução de velocidade ao virar: quanto maior o ângulo de giro, menor a velocidade máxima.
+    // O nitro precisa valer no TETO de velocidade: sem isso o speedCap
+    // (velocidade normal) puxava o carro de volta e o nitro só rendia +1.
+    const nitroActive = p.nitroTimer > 0;
+    const nitroBoost = nitroActive ? NITRO_SPEED_BOOST : 1;
     const steerFactor = Math.max(0, 1 - Math.abs(p.steer) * 0.05);
-    const speedCap = spec.maxSpeed * steerFactor;
+    const speedCap = spec.maxSpeed * steerFactor * nitroBoost;
     if (p.speed > speedCap) p.speed = Math.max(speedCap, p.speed - spec.maxSpeed * 1.5 * dt);
     p.offset += steer * 2.6 * Math.max(0.12, speedFrac) * dt;
 
     p.offset -= segment.curve * speedFrac * (0.3 + (1 - spec.grip) * 0.24) * dt;
     p.offset = clamp(p.offset, -1.75, 1.75);
 
-    const nitroActive = p.nitroTimer > 0;
     if (input.nitro && p.nitroLeft > 0 && !nitroActive) {
       p.nitroLeft -= 1;
       p.nitroTimer = 2.4;
@@ -241,14 +248,14 @@ export class Race {
 
     const accelBase = spec.maxSpeed / spec.accelFactor;
     let accel = 0;
-    if (input.throttle) accel += accelBase * gb.power * (nitroActive ? 2 : 1);
+    if (input.throttle) accel += accelBase * gb.power * (nitroActive ? NITRO_ACCEL : 1);
     if (input.brake) accel -= spec.maxSpeed * 1.5;
     if (!input.throttle && !input.brake) accel -= spec.maxSpeed * 0.22;
 
     p.speed += accel * dt;
 
     const fuelFactor = p.fuel <= 0 ? 0.55 : 1;
-    const top = spec.maxSpeed * (nitroActive ? 1.2 : 1) * fuelFactor;
+    const top = spec.maxSpeed * nitroBoost * fuelFactor;
     if (p.speed > top) p.speed = Math.max(top, p.speed - spec.maxSpeed * 1.25 * dt);
     if (p.speed < 0) p.speed = 0;
 
@@ -268,9 +275,9 @@ export class Race {
         }
 
         if (z >= pit.boxStart && z <= pit.boxEnd) {
-          // O serviço acontece uma vez por passagem: enche o tanque de nitro
+          // O serviço acontece uma vez por passagem: RECARREGA TODOS OS NITROS
           // e reabastece o combustível.
-          if (!p.inPit && (p.fuel < spec.fuelCapacity * 0.25 || p.nitroLeft < spec.nitros * 0.5)) {
+          if (!p.pitServed) {
             p.pitServed = true;
             p.pitStops += 1;
             p.nitroLeft = spec.nitros;
