@@ -59,11 +59,11 @@ function pairFor(style: CarStyle, isPlayer: boolean): SpritePair | null {
     case 'rx7':
       return isPlayer ? PLAYER_RX7 : BOT_RX7;
     case 'light':
-      return CIVIC;
+      return SALEEN;
     case 'muscle':
       return HEMICUDA;
     case 'turbo':
-      return SALEEN;
+      return CIVIC;
     default:
       return null;
   }
