@@ -83,13 +83,25 @@ function imageFor(key: string, url: string): HTMLImageElement {
 }
 
 // Pré-carrega todas as vistas assim que o módulo é importado.
-[
-  PLAYER_RX7.front, PLAYER_RX7.rear, PLAYER_RX7.side,
-  BOT_RX7.front, BOT_RX7.rear, BOT_RX7.side,
-  CIVIC.front, CIVIC.rear, CIVIC.side,
-  HEMICUDA.front, HEMICUDA.rear, HEMICUDA.side,
-  SALEEN.front, SALEEN.rear, SALEEN.side,
-].forEach((url, index) => imageFor(`preload-${index}`, url));
+// IMPORTANTE: usa as MESMAS chaves do desenho (estilo-jogador-vista) para
+// reaproveitar exatamente os mesmos objetos Image. Antes o preload usava
+// chaves diferentes, então na largada o jogo criava 16 imagens novas e
+// decodificava tudo de uma vez — um travamento de centenas de ms.
+const PRELOADS: Array<[string, SpritePair]> = [
+  ['rx7-p', PLAYER_RX7],
+  ['rx7-b', BOT_RX7],
+  ['light-b', CIVIC],
+  ['muscle-b', HEMICUDA],
+  ['turbo-b', SALEEN],
+];
+
+PRELOADS.forEach(([prefix, pair]) => {
+  (['front', 'rear', 'side'] as const).forEach((view) => {
+    const image = imageFor(`${prefix}-${view}`, pair[view]);
+    // Dispara o decode agora (fora do caminho crítico do primeiro frame).
+    if (typeof image.decode === 'function') void image.decode().catch(() => {});
+  });
+});
 
 /**
  * Desenha o carro com o sprite correspondente ao estilo.

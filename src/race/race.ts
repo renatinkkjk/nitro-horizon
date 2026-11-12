@@ -84,7 +84,9 @@ export class Race {
     this.track = track;
     this.audio = audio;
 
-    const lanes = [-0.55, 0, 0.55];
+    // Pistas mais separadas na largada: com as fileiras muito juntas os
+    // carros se empilhavam e o jogador saía da largada "travado".
+    const lanes = [-0.62, 0, 0.62];
     const playerGrid = 14; // última fileira, lado direito
 
     for (let i = 0; i < 15; i += 1) {
@@ -96,7 +98,7 @@ export class Race {
 
       const row = Math.floor(i / 3);
       // Fileira 0 é a da frente; o jogador (i=14, fileira 4) larga por último.
-      const distance = -row * 400;
+      const distance = -row * 520;
 
       const racer: Racer = {
         id: i,
@@ -428,10 +430,12 @@ export class Race {
 
         const dir = dx === 0 ? 1 : Math.sign(dx);
         const overlap = CAR_X_SIZE - Math.abs(dx);
-        a.offset = clamp(a.offset + dir * overlap * 0.5, -1.6, 1.6);
-        b.offset = clamp(b.offset - dir * overlap * 0.5, -1.6, 1.6);
+        a.offset = clamp(a.offset + dir * overlap * 0.35, -1.6, 1.6);
+        b.offset = clamp(b.offset - dir * overlap * 0.35, -1.6, 1.6);
 
-        const slow = 0.975;
+        // perda de velocidade suave: batidas na largada não podem travar
+        // o carro do jogador.
+        const slow = 0.99;
         a.speed *= slow;
         b.speed *= slow;
 
