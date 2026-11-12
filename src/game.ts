@@ -23,6 +23,7 @@ import {
   drawHelpScreen,
   drawPauseScreen,
   drawResultsScreen,
+  drawStoryIntro,
   drawStoryScreen,
   drawTitleScreen,
   drawTrackSelectScreen,
@@ -38,7 +39,7 @@ import {
 import type { Track } from './world/track';
 import { TRACKS } from './world/tracks';
 
-type GameState = 'title' | 'help' | 'car' | 'track' | 'race' | 'results' | 'story' | 'storyEnd';
+type GameState = 'title' | 'help' | 'car' | 'track' | 'race' | 'results' | 'storyIntro' | 'story' | 'storyEnd';
 
 /** Pontuação do campeonato do modo história (1º ao 10º). */
 const STORY_POINTS = [15, 12, 10, 8, 6, 5, 4, 3, 2, 1];
@@ -76,6 +77,8 @@ export class Game {
   // --- Modo história: campeonato de 3 corridas ---
   private storyActive = false;
   private storyRound = 0;
+  /** Página da abertura do modo história (0 = CEPK, 1 = desafio). */
+  private storyIntroPage = 0;
   private storyPlayerId = 14;
   private storyBannerPending = false;
   private readonly storyPoints = new Map<number, number>();
@@ -172,7 +175,10 @@ export class Game {
             this.state = 'car';
           } else if (this.menuIndex === 1) {
             this.resetStory();
-            this.state = 'car';
+            // Abertura do campeonato: duas telas de narração antes de
+            // escolher o carro.
+            this.storyIntroPage = 0;
+            this.state = 'storyIntro';
           } else {
             this.state = 'help';
           }
@@ -328,6 +334,23 @@ export class Game {
             this.race = null;
             this.state = 'title';
           }
+        }
+        break;
+      }
+
+      case 'storyIntro': {
+        if (input.confirmPressed) {
+          this.audio.beep(660, 0.08);
+          if (this.storyIntroPage === 0) {
+            this.storyIntroPage = 1;
+          } else {
+            // Depois da narração: escolhe o carro do campeonato.
+            this.state = 'car';
+          }
+        } else if (input.backPressed) {
+          this.audio.beep(440, 0.08);
+          this.storyActive = false;
+          this.state = 'title';
         }
         break;
       }
@@ -604,6 +627,10 @@ export class Game {
         }
         break;
       }
+
+      case 'storyIntro':
+        drawStoryIntro(ctx, this.storyIntroPage, this.blink);
+        break;
 
       case 'story':
         this.renderMenuBackground(this.storyRound);

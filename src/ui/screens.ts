@@ -445,6 +445,46 @@ export interface StoryScreenData {
  * Tela intermediária do modo história: classificação do campeonato entre as
  * corridas e, no final, o resultado da temporada.
  */
+/** Narração de abertura do modo história: tela preta com o texto do CEPK. */
+export function drawStoryIntro(
+  ctx: CanvasRenderingContext2D,
+  page: number,
+  blink: boolean,
+): void {
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  const pages: string[][] = [
+    ['o CEPK decidiu organizar um', 'campeonato de corrida...'],
+    ['... então você deve se provar', 'ser o melhor e ganhar o', 'campeonato kennedy!'],
+  ];
+  const lines = pages[Math.min(page, pages.length - 1)];
+
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'alphabetic';
+
+  const startY = HEIGHT / 2 - (lines.length - 1) * 8;
+  lines.forEach((line, i) => {
+    const y = startY + i * 18;
+    ctx.fillStyle = 'rgba(0,0,0,0.9)';
+    ctx.fillText(line, WIDTH / 2 + 1, y + 1);
+    ctx.fillStyle = '#f2f4ff';
+    ctx.fillText(line, WIDTH / 2, y);
+  });
+
+  // Assinatura do CEPK no rodapé da primeira página.
+  if (page === 0) {
+    ctx.font = 'bold 9px monospace';
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillText('— CEPK', WIDTH / 2, startY + 46);
+  }
+
+  if (blink) {
+    text(ctx, 'ENTER CONTINUAR', WIDTH / 2, HEIGHT - 26, 8, '#ffd23f', 'center');
+  }
+}
+
 export function drawStoryScreen(
   ctx: CanvasRenderingContext2D,
   data: StoryScreenData,
