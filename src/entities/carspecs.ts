@@ -57,8 +57,8 @@ export const CAR_SPECS: CarSpec[] = [
     stats: { velocidade: 4, aceleracao: 2, grip: 2, tanque: 4, consumo: 2 },
   },
   {
-    id: 'civic',
-    name: 'CIVIC EG',
+    id: 'saleen',
+    name: 'SALEEN S7',
     tagline: 'Nitro agressivo — tudo ou nada.',
     body: '#ff8a3d',
     accent: '#22e0ff',
@@ -72,8 +72,8 @@ export const CAR_SPECS: CarSpec[] = [
     stats: { velocidade: 3, aceleracao: 3, grip: 2, tanque: 3, consumo: 3 },
   },
   {
-    id: 'saleen',
-    name: 'SALEEN S7',
+    id: 'civic',
+    name: 'CIVIC EG',
     tagline: 'Ágil e leve — vive das curvas.',
     body: '#4d9bff',
     accent: '#22e0ff',
