@@ -16,7 +16,7 @@ const Jimp = require('jimp');
 const fs = require('fs');
 const path = require('path');
 
-const SRC_DIR = 'C:\\nhtmp\\assets-new';
+const SRC_DIR = path.join(__dirname, 'sources');
 const OUT = path.join(__dirname, '..', 'src', 'assets');
 
 /** Remove o chunk eXIf (o pngjs do jimp engasga com ele). */
@@ -177,22 +177,22 @@ function columnClusters(image, maxGap = 25) {
 
 const JOBS = [
   {
-    file: 'file_000000007608820e8f66c71e4b5e88d6(3).png',
+    file: 'carro-verde.png',
     label: 'VERDE -> TROVAO',
     names: ['bot-trovao-front.png', 'bot-trovao-side.png', 'bot-trovao-rear.png'],
   },
   {
-    file: 'file_000000007608820e8f66c71e4b5e88d6.png',
+    file: 'carro-laranja.png',
     label: 'LARANJA -> VESPA',
     names: ['bot-vespa-front.png', 'bot-vespa-side.png', 'bot-vespa-rear.png'],
   },
   {
-    file: 'file_000000007608820e8f66c71e4b5e88d6(1).png',
+    file: 'carro-azul.png',
     label: 'AZUL -> TITA',
     names: ['bot-tita-front.png', 'bot-tita-side.png', 'bot-tita-rear.png'],
   },
   {
-    file: 'file_000000007608820e8f66c71e4b5e88d6(2).png',
+    file: 'carro-vermelho.png',
     label: 'VERMELHO -> RX7',
     names: ['rx7-bot-front.png', 'rx7-bot-side.png', 'rx7-bot-rear.png'],
   },
@@ -228,6 +228,84 @@ function keepMainBand(image) {
   return cropToContent(trimmed);
 }
 
+/**
+ * Preenche os buracos internos (transparentes cercados por pixels opacos)
+ * com a cor do vizinho opaco mais próximo. As artes novas já vêm com fundo
+ * transparente, então NÃO fazemos flood-fill: ele atravessaria o fundo
+ * (RGB 0,0,0) e comeria os pneus pretos do carro.
+ */
+function fillInternalHoles(image) {
+  const { width, height, data } = image.bitmap;
+  const total = width * height;
+  const outside = new Uint8Array(total);
+  const stack = [];
+  const pushOutside = (x, y) => {
+    const idx = y * width + x;
+    if (outside[idx]) return;
+    if (data[idx * 4 + 3] > 8) return;
+    outside[idx] = 1;
+    stack.push(x, y);
+  };
+  for (let x = 0; x < width; x += 1) { pushOutside(x, 0); pushOutside(x, height - 1); }
+  for (let y = 0; y < height; y += 1) { pushOutside(0, y); pushOutside(width - 1, y); }
+  while (stack.length) {
+    const y = stack.pop();
+    const x = stack.pop();
+    if (x > 0) pushOutside(x - 1, y);
+    if (x < width - 1) pushOutside(x + 1, y);
+    if (y > 0) pushOutside(x, y - 1);
+    if (y < height - 1) pushOutside(x, y + 1);
+  }
+
+  const filled = new Uint8Array(total);
+  const queue = [];
+  const isHole = (idx) => data[idx * 4 + 3] <= 8 && !outside[idx];
+
+  // 1ª passada: buracos encostados em pixel opaco já ganham a cor dele.
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = y * width + x;
+      if (!isHole(idx)) continue;
+      const neigh = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]];
+      for (const [nx, ny] of neigh) {
+        if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
+        const nidx = ny * width + nx;
+        if (data[nidx * 4 + 3] <= 8) continue;
+        data[idx * 4] = data[nidx * 4];
+        data[idx * 4 + 1] = data[nidx * 4 + 1];
+        data[idx * 4 + 2] = data[nidx * 4 + 2];
+        data[idx * 4 + 3] = 255;
+        filled[idx] = 1;
+        queue.push(nx, ny);
+        break;
+      }
+    }
+  }
+
+  // 2ª passada: propaga a cor para dentro do buraco.
+  while (queue.length) {
+    const ny = queue.pop();
+    const nx = queue.pop();
+    const nidx = ny * width + nx;
+    const r = data[nidx * 4];
+    const g = data[nidx * 4 + 1];
+    const b = data[nidx * 4 + 2];
+    const neigh = [[nx - 1, ny], [nx + 1, ny], [nx, ny - 1], [nx, ny + 1]];
+    for (const [px, py] of neigh) {
+      if (px < 0 || py < 0 || px >= width || py >= height) continue;
+      const pidx = py * width + px;
+      if (filled[pidx] || !isHole(pidx)) continue;
+      data[pidx * 4] = r;
+      data[pidx * 4 + 1] = g;
+      data[pidx * 4 + 2] = b;
+      data[pidx * 4 + 3] = 255;
+      filled[pidx] = 1;
+      queue.push(px, py);
+    }
+  }
+  return image;
+}
+
 async function main() {
   const blackBg = (r, g, b) => Math.max(r, g, b) < 10;
   for (const job of JOBS) {
@@ -239,13 +317,20 @@ async function main() {
       continue;
     }
     const [front, side, rear] = clusters;
-    const boxes = [
-      { x: front[0] - 2, y: 0, w: front[1] - front[0] + 5, h: image.bitmap.height },
-      { x: side[0] - 2, y: 0, w: side[1] - side[0] + 5, h: image.bitmap.height },
-      { x: rear[0] - 2, y: 0, w: rear[1] - rear[0] + 5, h: image.bitmap.height },
-    ];
+    const imgW = image.bitmap.width;
+    const imgH = image.bitmap.height;
+    const boxOf = (c) => {
+      const x = Math.max(0, c[0] - 2);
+      const w = Math.min(imgW - x, c[1] - c[0] + 5);
+      return { x, y: 0, w, h: imgH };
+    };
+    const boxes = [boxOf(front), boxOf(side), boxOf(rear)];
     for (let i = 0; i < 3; i += 1) {
-      const sprite = keepMainBand(cutWithGroundRefill(image, boxes[i], blackBg));
+      // Recorta só as colunas do sprite (o alpha original já é o fundo).
+      const box = boxes[i];
+      const piece = image.clone().crop(box.x, box.y, box.w, box.h);
+      // Tira a faixa solta acima/abaixo e preenche buracos internos.
+      const sprite = cropToContent(fillInternalHoles(keepMainBand(piece)));
       await sprite.quality(90).writeAsync(path.join(OUT, job.names[i]));
       console.log(job.label, job.names[i], sprite.bitmap.width + 'x' + sprite.bitmap.height);
     }
