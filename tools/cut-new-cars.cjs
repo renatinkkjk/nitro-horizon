@@ -326,9 +326,13 @@ async function main() {
     };
     const boxes = [boxOf(front), boxOf(side), boxOf(rear)];
     for (let i = 0; i < 3; i += 1) {
-      // Recorta a coluna do sprite, tira o fundo preto (flood-fill + refill
-      // da base) e remove a faixa solta acima/abaixo do carro.
-      const sprite = keepMainBand(cutWithGroundRefill(image, boxes[i], blackBg));
+      // 1) recorta a coluna do sprite e joga fora a faixa solta em cima/abaixo
+      //    (a arte original tem resto de outro objeto nas bordas da faixa);
+      // 2) só depois faz o flood-fill + refill da base, que assim reconstrói
+      //    apenas o pneu do carro e não cria uma "caixa" preta embaixo dele.
+      const box = boxes[i];
+      const piece = image.clone().crop(box.x, box.y, box.w, box.h);
+      const sprite = cropToContent(cutWithGroundRefill(keepMainBand(piece), { x: 0, y: 0, w: piece.bitmap.width, h: piece.bitmap.height }, blackBg));
       await sprite.quality(90).writeAsync(path.join(OUT, job.names[i]));
       console.log(job.label, job.names[i], sprite.bitmap.width + 'x' + sprite.bitmap.height);
     }

@@ -254,8 +254,7 @@ export function drawCarSelectScreen(
       body: item.body,
       accent: item.accent,
       style: item.style,
-      ...{ view: 'side' as const },
-    });
+    }, { view: 'side' });
 
     ctx.font = 'bold 8px monospace';
     ctx.textAlign = 'center';
