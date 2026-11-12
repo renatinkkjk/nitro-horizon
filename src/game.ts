@@ -29,6 +29,7 @@ import {
   drawStoryScreen,
   drawTitleScreen,
   drawTrackSelectScreen,
+  menuOffset,
   pauseOptions,
   type StoryRow,
   type StoryScreenData,
@@ -68,12 +69,20 @@ interface SmokePuff {
   strength: number;
 }
 
-const WIDTH = 400;
-const HEIGHT = 280;
+// Resolução interna do jogo. É MUTÁVEL: em tela cheia o jogo se ajusta ao
+// formato da tela (mais pixels na horizontal em telas largas), e o HUD se
+// ancora nas bordas. Os módulos que importam veem o valor atualizado.
+export let WIDTH = 400;
+export let HEIGHT = 280;
+
+/** Ajusta a resolução interna (usado pela tela cheia). */
+export function setViewport(width: number, height: number): void {
+  WIDTH = Math.max(320, Math.round(width));
+  HEIGHT = Math.max(240, Math.round(height));
+}
+
 const CAR_WORLD_WIDTH = 1100;
 const CAR_WORLD_HEIGHT = 830;
-
-export { WIDTH, HEIGHT };
 
 export class Game {
   private readonly ctx: CanvasRenderingContext2D;
@@ -654,6 +663,17 @@ export class Game {
     this.state = 'race';
   }
 
+
+  /** Desenha um menu (layout fixo 400x280) centralizado na tela atual. */
+  private drawMenu(draw: (ctx: CanvasRenderingContext2D) => void): void {
+    const ctx = this.ctx;
+    const [ox, oy] = menuOffset();
+    ctx.save();
+    ctx.translate(Math.round(ox), Math.round(oy));
+    draw(ctx);
+    ctx.restore();
+  }
+
   private render(): void {
     const ctx = this.ctx;
     ctx.imageSmoothingEnabled = false;
@@ -661,32 +681,34 @@ export class Game {
     switch (this.state) {
       case 'title':
         this.renderMenuBackground();
-        drawTitleScreen(ctx, this.menuIndex, this.blink);
+        this.drawMenu((c) => drawTitleScreen(c, this.menuIndex, this.blink));
         break;
 
       case 'help':
         this.renderMenuBackground();
-        drawHelpScreen(ctx, this.blink);
+        this.drawMenu((c) => drawHelpScreen(c, this.blink));
         break;
 
       case 'options':
         this.renderMenuBackground();
-        drawOptionsScreen(ctx, {
-          index: this.optionsIndex,
-          music: this.volumes.music,
-          sfx: this.volumes.sfx,
-          blink: this.blink,
-        });
+        this.drawMenu((c) =>
+          drawOptionsScreen(c, {
+            index: this.optionsIndex,
+            music: this.volumes.music,
+            sfx: this.volumes.sfx,
+            blink: this.blink,
+          }),
+        );
         break;
 
       case 'car':
         this.renderMenuBackground();
-        drawCarSelectScreen(ctx, CAR_SPECS, this.carIndex, this.blink, this.storyActive);
+        this.drawMenu((c) => drawCarSelectScreen(c, CAR_SPECS, this.carIndex, this.blink, this.storyActive));
         break;
 
       case 'track':
         this.renderMenuBackground(this.trackIndex);
-        drawTrackSelectScreen(ctx, TRACKS, this.trackIndex, this.blink);
+        this.drawMenu((c) => drawTrackSelectScreen(c, TRACKS, this.trackIndex, this.blink));
         break;
 
       case 'race':
@@ -697,30 +719,32 @@ export class Game {
         this.renderRace(false);
         if (this.race) {
           const position = this.race.positionDisplay;
-          drawResultsScreen(ctx, this.race, this.blink, {
-            story: this.storyActive,
-            round: this.storyRound + 1,
-            totalRounds: TRACKS.length,
-            ...(this.storyActive
-              ? { pointsGained: STORY_POINTS[position - 1] ?? 0 }
-              : {}),
-          });
+          this.drawMenu((c) =>
+            drawResultsScreen(c, this.race as Race, this.blink, {
+              story: this.storyActive,
+              round: this.storyRound + 1,
+              totalRounds: TRACKS.length,
+              ...(this.storyActive
+                ? { pointsGained: STORY_POINTS[position - 1] ?? 0 }
+                : {}),
+            }),
+          );
         }
         break;
       }
 
       case 'storyIntro':
-        drawStoryIntro(ctx, this.storyIntroPage, this.blink);
+        this.drawMenu((c) => drawStoryIntro(c, this.storyIntroPage, this.blink));
         break;
 
       case 'story':
         this.renderMenuBackground(this.storyRound);
-        drawStoryScreen(ctx, this.buildStoryData(false), this.blink);
+        this.drawMenu((c) => drawStoryScreen(c, this.buildStoryData(false), this.blink));
         break;
 
       case 'storyEnd':
         this.renderMenuBackground(TRACKS.length - 1);
-        drawStoryScreen(ctx, this.buildStoryData(true), this.blink);
+        this.drawMenu((c) => drawStoryScreen(c, this.buildStoryData(true), this.blink));
         break;
     }
   }
@@ -780,7 +804,9 @@ export class Game {
     }
 
     if (race.phase === 'countdown') drawCountdown(ctx, race.countdown);
-    if (this.paused) drawPauseScreen(ctx, this.pauseIndex, pauseOptions(isFullscreen()));
+    if (this.paused) {
+      this.drawMenu((c) => drawPauseScreen(c, this.pauseIndex, pauseOptions(isFullscreen())));
+    }
   }
 
   private groundAt(track: Track, distance: number): number {
@@ -1003,7 +1029,7 @@ export class Game {
     const push = isDrift ? -turnDir * (10 + 24 * strength) : 0;
     // Posição: sai dos PNEUS traseiros (dois, um de cada lado) na traseira.
     const tire = Math.random() < 0.5 ? -1 : 1;
-    const backY = 263; // altura do contato do pneu com o asfalto
+    const backY = HEIGHT - 17; // altura do contato do pneu com o asfalto
     const lateralOffset = isDrift ? (37 + Math.random() * 5) : 0;
     this.smoke.push({
       x: 200 + tire * 34 + (isDrift ? side * lateralOffset : 0),
@@ -1050,7 +1076,7 @@ export class Game {
         const speed = 3 + Math.random() * 3;
         this.exhaustParticles.push({
           x: 200 + tip,
-          y: 254,
+          y: HEIGHT - 26,
           vx: angle * speed,
           vy: 2 + Math.random() * 3,
           life: 0,
@@ -1082,7 +1108,7 @@ export class Game {
     const len = 10 + flick * 9;
     for (const tip of [-14, 14]) {
       const x = 200 + tip;
-      const y = 250;
+      const y = HEIGHT - 30;
       ctx.fillStyle = '#ff5a12';
       ctx.fillRect(Math.round(x - 3), Math.round(y), 6, Math.round(len));
       ctx.fillStyle = '#ffa32e';
@@ -1135,7 +1161,7 @@ export class Game {
     drawCar(
       ctx,
       200,
-      268,
+      HEIGHT - 12,
       112,
       80,
       { body: player.body, accent: player.accent, style: player.spec.style },
@@ -1155,8 +1181,8 @@ export class Game {
     const alpha = race.nitroFx * 0.55;
     ctx.strokeStyle = `rgba(220,245,255,${alpha})`;
     ctx.lineWidth = 1;
-    const cx = 160;
-    const cy = 120;
+    const cx = WIDTH / 2;
+    const cy = HEIGHT / 2;
 
     for (let i = 0; i < 22; i += 1) {
       const angle = (i / 22) * Math.PI * 2 + this.time * 0.6;

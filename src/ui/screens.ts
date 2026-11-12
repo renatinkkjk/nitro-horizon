@@ -8,14 +8,31 @@ import { WIDTH, HEIGHT } from '../game';
 /** Mascote com URL estável (mesma razão dos sprites: sobrevive ao cache). */
 const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=6';
 
+
+/** Os menus tem layout fixo de 400x280, centralizado na tela adaptativa. */
+const MENU_W = 400;
+const MENU_H = 280;
+
+/** Deslocamento (em pixels) para centralizar o menu na tela atual. */
+export function menuOffset(): [number, number] {
+  return [(WIDTH - MENU_W) / 2, (HEIGHT - MENU_H) / 2];
+}
+
+/** Preenche a tela inteira (o menu e desenhado em coordenadas 400x280). */
+function fillBackground(ctx: CanvasRenderingContext2D, style: string): void {
+  const [ox, oy] = menuOffset();
+  ctx.fillStyle = style;
+  ctx.fillRect(-ox, -oy, WIDTH, HEIGHT);
+}
+
 function title(ctx: CanvasRenderingContext2D, value: string, y: number, size: number, color: string): void {
   ctx.font = `bold ${size}px monospace`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(0,0,0,0.75)';
-  ctx.fillText(value, WIDTH / 2 + 2, y + 3);
+  ctx.fillText(value, MENU_W / 2 + 2, y + 3);
   ctx.fillStyle = color;
-  ctx.fillText(value, WIDTH / 2, y);
+  ctx.fillText(value, MENU_W / 2, y);
 }
 
 function pips(ctx: CanvasRenderingContext2D, x: number, y: number, value: number, max = 4): void {
@@ -83,8 +100,7 @@ export function drawTitleScreen(
   menuIndex: number,
   blink: boolean,
 ): void {
-  ctx.fillStyle = 'rgba(5,6,12,0.55)';
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  fillBackground(ctx, 'rgba(5,6,12,0.55)');
 
   title(ctx, 'NITRO', 70, 42, '#ff3d7f');
   title(ctx, 'HORIZON', 116, 42, '#22e0ff');
@@ -92,7 +108,7 @@ export function drawTitleScreen(
   ctx.font = 'bold 7px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#8b93bd';
-  ctx.fillText('CORRIDA ARCADE PIXEL ART', WIDTH / 2, 138);
+  ctx.fillText('CORRIDA ARCADE PIXEL ART', MENU_W / 2, 138);
 
   panel(ctx, 80, 142, 240, 116, 0.74);
 
@@ -104,13 +120,13 @@ export function drawTitleScreen(
       ctx.fillRect(88, y - 14, 224, 20);
       if (blink) text(ctx, '▶', 96, y, 10, '#22e0ff');
     }
-    text(ctx, label, WIDTH / 2, y, 10, selected ? '#ffffff' : '#b8c2e8', 'center');
+    text(ctx, label, MENU_W / 2, y, 10, selected ? '#ffffff' : '#b8c2e8', 'center');
   });
 
   ctx.font = '7px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('↑ ↓ NAVEGAR · ENTER CONFIRMAR · F TELA CHEIA', WIDTH / 2, 266);
+  ctx.fillText('↑ ↓ NAVEGAR · ENTER CONFIRMAR · F TELA CHEIA', MENU_W / 2, 266);
 
   // Mascote CEPK ao lado direito do menu.
   drawMascot(ctx, 360, 252, 86);
@@ -347,9 +363,9 @@ export function drawCountdown(ctx: CanvasRenderingContext2D, value: number): voi
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.fillText(label, WIDTH / 2 + 3, 153);
+  ctx.fillText(label, MENU_W / 2 + 3, 153);
   ctx.fillStyle = value <= 0 ? '#3dff8b' : '#ffd23f';
-  ctx.fillText(label, WIDTH / 2, 149);
+  ctx.fillText(label, MENU_W / 2, 149);
 }
 
 export interface ResultsScreenOptions {
@@ -452,8 +468,7 @@ export function drawStoryIntro(
   page: number,
   blink: boolean,
 ): void {
-  ctx.fillStyle = '#000000';
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  fillBackground(ctx, '#000000');
 
   const pages: string[][] = [
     ['o CEPK decidiu organizar um', 'campeonato de corrida...'],
@@ -465,24 +480,24 @@ export function drawStoryIntro(
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
 
-  const startY = HEIGHT / 2 - (lines.length - 1) * 8;
+  const startY = MENU_H / 2 - (lines.length - 1) * 8;
   lines.forEach((line, i) => {
     const y = startY + i * 18;
     ctx.fillStyle = 'rgba(0,0,0,0.9)';
-    ctx.fillText(line, WIDTH / 2 + 1, y + 1);
+    ctx.fillText(line, MENU_W / 2 + 1, y + 1);
     ctx.fillStyle = '#f2f4ff';
-    ctx.fillText(line, WIDTH / 2, y);
+    ctx.fillText(line, MENU_W / 2, y);
   });
 
   // Assinatura do CEPK no rodapé da primeira página.
   if (page === 0) {
     ctx.font = 'bold 9px monospace';
     ctx.fillStyle = '#ffd23f';
-    ctx.fillText('— CEPK', WIDTH / 2, startY + 46);
+    ctx.fillText('- CEPK', MENU_W / 2, startY + 46);
   }
 
   if (blink) {
-    text(ctx, 'ENTER CONTINUAR', WIDTH / 2, HEIGHT - 26, 8, '#ffd23f', 'center');
+    text(ctx, 'ENTER CONTINUAR', MENU_W / 2, MENU_H - 26, 8, '#ffd23f', 'center');
   }
 }
 
@@ -645,8 +660,7 @@ function volumeBar(
 
 /** Tela de opções: volume da música e dos efeitos. */
 export function drawOptionsScreen(ctx: CanvasRenderingContext2D, data: OptionsData): void {
-  ctx.fillStyle = 'rgba(5,6,12,0.86)';
-  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+  fillBackground(ctx, 'rgba(5,6,12,0.86)');
 
   panel(ctx, 15, 22, 370, 230, 0.92);
   title(ctx, 'OPÇÕES', 48, 15, '#22e0ff');
@@ -682,6 +696,6 @@ export function drawOptionsScreen(ctx: CanvasRenderingContext2D, data: OptionsDa
   ctx.font = '8px monospace';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#4a5480';
-  ctx.fillText('↑ ↓ SELECIONAR · ◀ ▶ AJUSTAR · ENTER VOLTAR', WIDTH / 2, 218);
-  ctx.fillText('A MÚSICA É UM TEMA ORIGINAL EM ESTILO SYNTHWAVE', WIDTH / 2, 234);
+  ctx.fillText('↑ ↓ SELECIONAR · ◀ ▶ AJUSTAR · ENTER VOLTAR', MENU_W / 2, 218);
+  ctx.fillText('A MÚSICA É UM TEMA ORIGINAL EM ESTILO SYNTHWAVE', MENU_W / 2, 234);
 }

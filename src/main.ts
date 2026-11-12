@@ -1,4 +1,4 @@
-import { Game } from './game';
+import { Game, setViewport } from './game';
 import { registerServiceWorker, setupInstallButton } from './ui/pwa';
 import {
   isFullscreen,
@@ -81,14 +81,43 @@ subscribeFullscreen(syncFullscreenUi);
 
 function fitCanvas(): void {
   // Escala inteira para manter os pixels nítidos (no mobile, aproveita a tela).
-  // Em tela cheia, ganha a área da barra de endereço e o canvas cresce junto.
-  const controls = isTouch ? 112 : 0;
+  // Em tela cheia, o jogo ganha a resolução interna da tela (mais pixels na
+  // horizontal em telas largas) e ocupa o viewport inteiro.
+  const full = isFullscreen();
+  // Em tela cheia os controles de toque flutuam por cima do jogo, então o
+  // canvas usa a altura toda da janela.
+  const controls = isTouch && !full ? 112 : 0;
   const availableW = window.innerWidth;
-  const availableH = window.innerHeight - controls - (isTouch ? 12 : 30);
+  const availableH = full
+    ? window.innerHeight
+    : window.innerHeight - controls - (isTouch ? 12 : 30);
+
+  if (full) {
+    // Tela cheia de verdade: a resolução interna acompanha o formato da tela
+    // e o canvas preenche 100% do viewport (sem barras pretas).
+    const aspect = availableW / Math.max(1, availableH);
+    const internalW = Math.round(280 * aspect);
+    applyInternalSize(Math.max(400, Math.min(720, internalW)), 280);
+    const scale = Math.max(availableW / canvas.width, availableH / canvas.height);
+    canvas.style.width = `${Math.round(canvas.width * scale)}px`;
+    canvas.style.height = `${Math.round(canvas.height * scale)}px`;
+    return;
+  }
+
+  applyInternalSize(400, 280);
   const raw = Math.min(availableW / 320, availableH / 224);
   const scale = raw >= 1 ? (isTouch ? raw : Math.floor(raw)) : raw;
   canvas.style.width = `${Math.round(320 * scale)}px`;
   canvas.style.height = `${Math.round(224 * scale)}px`;
+}
+
+/** Define a resolução interna (backing store) do canvas e avisa o jogo. */
+function applyInternalSize(width: number, height: number): void {
+  if (canvas.width === width && canvas.height === height) return;
+  canvas.width = width;
+  canvas.height = height;
+  ctx.imageSmoothingEnabled = false;
+  setViewport(width, height);
 }
 
 window.addEventListener('resize', fitCanvas);

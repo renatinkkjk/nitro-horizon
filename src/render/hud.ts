@@ -242,25 +242,25 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
   if (data.position <= 3 && data.total > 3) {
     const rpct = (1 - data.position / data.total) * 100;
     ctx.fillStyle = `rgba(34,224,255,${rpct / 100 * 0.4})`;
-    ctx.fillRect(350, 12, 45, 8);
+    ctx.fillRect(WIDTH - 50, 12, 45, 8);
     ctx.fillStyle = '#22e0ff';
-    ctx.fillRect(350 + (100 - rpct) / 100 * 45, 12, (rpct / 100) * 45, 8);
+    ctx.fillRect(WIDTH - 50 + (100 - rpct) / 100 * 45, 12, (rpct / 100) * 45, 8);
   }
 
   // minimapa (topo direito)
-  drawMinimap(ctx, 313, 6, 82, 60, data.map, data.dots, data.pit);
+  drawMinimap(ctx, WIDTH - 87, 6, 82, 60, data.map, data.dots, data.pit);
   text(ctx, `MELHOR ${formatTime(data.bestLap)}`, WIDTH - 6, 76, 7, '#ffd23f', 'right');
 
   // status do pit lane (centro superior)
   if (data.inPit) {
     const refueling = data.refueling;
     const color = refueling ? '#3dff8b' : '#ffd23f';
-    panel(ctx, 188, 30, 112, 18, 0.78);
-    text(ctx, refueling ? 'PIT STOP' : 'PIT LANE', 194, 38, 7, color);
+    panel(ctx, cx - 56, 30, 112, 18, 0.78);
+    text(ctx, refueling ? 'PIT STOP' : 'PIT LANE', cx - 50, 38, 7, color);
     text(
       ctx,
       refueling ? `${Math.round(data.fuelFrac * 100)}%` : '100',
-      293,
+      cx + 49,
       38,
       8,
       '#ffffff',
@@ -269,35 +269,35 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
     if (refueling) {
       ctx.fillStyle = '#3dff8b';
       const w = 108 * Math.max(0, Math.min(1, data.fuelFrac));
-      ctx.fillRect(192, 40, w, 1);
+      ctx.fillRect(cx - 52, 40, w, 1);
     }
   } else if (data.fuelFrac < 0.18) {
     const blink = Math.floor(performance.now() / 320) % 2 === 0;
-    if (blink) text(ctx, 'PIT', WIDTH - 6, 246, 7, '#ff4040', 'right');
+    if (blink) text(ctx, 'PIT', WIDTH - 6, HEIGHT - 34, 7, '#ff4040', 'right');
   }
 
   // painel de velocidade (esquerda inferior)
-  panel(ctx, 6, 234, 130, 44);
+  panel(ctx, 6, HEIGHT - 46, 130, 44);
   const kmh = Math.round(data.speedKmh);
-  text(ctx, String(kmh).padStart(3, ' '), 12, 258, 22, '#ffffff');
-  text(ctx, 'km/h', 62, 258, 8, '#8b93bd');
-  text(ctx, 'M', 106, 248, 8, '#8b93bd');
-  text(ctx, data.gear, 114, 262, 18, '#ffd23f');
+  text(ctx, String(kmh).padStart(3, ' '), 12, HEIGHT - 22, 22, '#ffffff');
+  text(ctx, 'km/h', 62, HEIGHT - 22, 8, '#8b93bd');
+  text(ctx, 'M', 106, HEIGHT - 32, 8, '#8b93bd');
+  text(ctx, data.gear, 114, HEIGHT - 18, 18, '#ffd23f');
 
   const rpmColor = data.rpmNorm > 0.85 ? '#ff4040' : data.rpmNorm > 0.65 ? '#ffd23f' : '#3dff8b';
-  bar(ctx, 12, 270, 104, 6, data.rpmNorm, rpmColor);
+  bar(ctx, 12, HEIGHT - 10, 104, 6, data.rpmNorm, rpmColor);
 
   // painel de combustível / nitro (direita inferior)
-  panel(ctx, WIDTH - 134, 234, 130, 42);
-  text(ctx, 'GASOLINA', WIDTH - 126, 246, 8, '#8b93bd');
+  panel(ctx, WIDTH - 134, HEIGHT - 46, 130, 42);
+  text(ctx, 'GASOLINA', WIDTH - 126, HEIGHT - 34, 8, '#8b93bd');
   const fuelColor = data.fuelFrac > 0.5 ? '#3dff8b' : data.fuelFrac > 0.2 ? '#ffd23f' : '#ff4040';
-  bar(ctx, WIDTH - 126, 252, 120, 8, data.fuelFrac, fuelColor);
+  bar(ctx, WIDTH - 126, HEIGHT - 28, 120, 8, data.fuelFrac, fuelColor);
 
-  text(ctx, 'NITRO', WIDTH - 126, 272, 8, '#8b93bd');
+  text(ctx, 'NITRO', WIDTH - 126, HEIGHT - 8, 8, '#8b93bd');
   for (let i = 0; i < data.nitroMax; i += 1) {
     const ccx = WIDTH - 78 + i * 14;
     ctx.beginPath();
-    ctx.arc(ccx, 269, 4, 0, Math.PI * 2);
+    ctx.arc(ccx, HEIGHT - 11, 4, 0, Math.PI * 2);
     ctx.fillStyle = i < data.nitroLeft ? '#22e0ff' : '#1c2340';
     ctx.fill();
     ctx.strokeStyle = '#2a3560';
@@ -306,7 +306,7 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
   }
 
   // mensagem central (drafting / última volta)
-  const centerY = 108;
+  const centerY = HEIGHT * 0.39;
   if (data.message && data.messageTimer > 0) {
     const blink = Math.floor(performance.now() / 200) % 2 === 0;
     if (blink) text(ctx, data.message, cx, centerY, 15, '#ffd23f', 'center');
@@ -315,9 +315,9 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
   if (data.position <= 3 && data.total > 3) {
     const rpct = (1 - data.position / data.total) * 100;
     ctx.fillStyle = `rgba(255, 165, 0, ${rpct / 100 * 0.3})`;
-    ctx.fillRect(350, 12, 45, 8);
+    ctx.fillRect(WIDTH - 50, 12, 45, 8);
     ctx.fillStyle = '#ffa500';
-    ctx.fillRect(350 + (100 - rpct) / 100 * 45, 12, (rpct / 100) * 45, 8);
+    ctx.fillRect(WIDTH - 50 + (100 - rpct) / 100 * 45, 12, (rpct / 100) * 45, 8);
   }
 
   if (data.lastLap && data.messageTimer <= 0) {
