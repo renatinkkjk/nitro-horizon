@@ -185,13 +185,13 @@ const JOBS = [
   },
   {
     file: 'carro-laranja.png',
-    label: 'LARANJA -> CIVIC',
-    names: ['bot-civic-front.png', 'bot-civic-side.png', 'bot-civic-rear.png'],
+    label: 'LARANJA -> SALEEN',
+    names: ['bot-saleen-front.png', 'bot-saleen-side.png', 'bot-saleen-rear.png'],
   },
   {
     file: 'carro-azul.png',
-    label: 'AZUL -> SALEEN',
-    names: ['bot-saleen-front.png', 'bot-saleen-side.png', 'bot-saleen-rear.png'],
+    label: 'AZUL -> CIVIC',
+    names: ['bot-civic-front.png', 'bot-civic-side.png', 'bot-civic-rear.png'],
   },
   {
     file: 'carro-vermelho.png',

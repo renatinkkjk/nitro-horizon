@@ -6,7 +6,7 @@ import { formatTime, panel, text, traceTrack } from '../render/hud';
 import { WIDTH, HEIGHT } from '../game';
 
 /** Mascote com URL estável (mesma razão dos sprites: sobrevive ao cache). */
-const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=4';
+const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=5';
 
 function title(ctx: CanvasRenderingContext2D, value: string, y: number, size: number, color: string): void {
   ctx.font = `bold ${size}px monospace`;

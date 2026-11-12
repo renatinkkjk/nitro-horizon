@@ -10,7 +10,7 @@ import type { CarDrawOptions, CarPaint } from './sprites';
  * os arquivos. O ?v= invalida o cache do arquivo quando a arte muda.
  */
 const SPRITE_BASE = '/nitro-horizon/sprites';
-const SPRITE_V = 4;
+const SPRITE_V = 5;
 
 function sprite(name: string): string {
   return `${SPRITE_BASE}/${name}?v=${SPRITE_V}`;
@@ -25,6 +25,7 @@ const rx7RearUrl = sprite('rx7-rear.png');
 const hemicudaFrontUrl = sprite('bot-hemicuda-front.png');
 const hemicudaRearUrl = sprite('bot-hemicuda-rear.png');
 const hemicudaSideUrl = sprite('bot-hemicuda-side.png');
+// CIVIC EG é o azul e SALEEN S7 é o laranja.
 const civicFrontUrl = sprite('bot-civic-front.png');
 const civicRearUrl = sprite('bot-civic-rear.png');
 const civicSideUrl = sprite('bot-civic-side.png');
