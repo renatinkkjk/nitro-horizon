@@ -6,7 +6,7 @@ import { formatTime, panel, text, traceTrack } from '../render/hud';
 import { WIDTH, HEIGHT } from '../game';
 
 /** Mascote com URL estável (mesma razão dos sprites: sobrevive ao cache). */
-const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=6';
+const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=7';
 
 
 /** Os menus tem layout fixo de 400x280, centralizado na tela adaptativa. */
