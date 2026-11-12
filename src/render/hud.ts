@@ -230,11 +230,11 @@ export function drawHud(ctx: CanvasRenderingContext2D, data: HudData): void {
   text(ctx, 'POS', 8, 15, 7, '#8b93bd');
   text(ctx, `${data.position}/${data.total}`, 30, 15, 10, '#ffffff');
 
-  text(ctx, 'VOLTA', 108, 15, 7, '#8b93bd');
-  text(ctx, `${data.lap}/${data.laps}`, 140, 15, 10, '#ffffff');
+  text(ctx, 'VOLTA', cx - 92, 15, 7, '#8b93bd');
+  text(ctx, `${data.lap}/${data.laps}`, cx - 60, 15, 10, '#ffffff');
 
-  text(ctx, 'ATUAL', 188, 15, 7, '#8b93bd');
-  text(ctx, formatTime(data.lapTime), 218, 15, 10, '#22e0ff');
+  text(ctx, 'ATUAL', cx - 12, 15, 7, '#8b93bd');
+  text(ctx, formatTime(data.lapTime), cx + 18, 15, 10, '#22e0ff');
 
   text(ctx, `TOTAL ${formatTime(data.totalTime)}`, 8, 34, 7, '#8b93bd');
 

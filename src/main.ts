@@ -39,6 +39,11 @@ if (isTouch) document.body.classList.add('touch');
 
 // Hook de depuração: expõe o estado do jogo no console do navegador.
 (window as unknown as { __nitro?: Game }).__nitro = game;
+// Ajuste de resolução (testes): muda o canvas e a resolução interna do jogo.
+(window as unknown as { __nitroResize?: (w: number, h: number) => void }).__nitroResize = (
+  width: number,
+  height: number,
+) => applyInternalSize(width, height);
 
 // --- PWA: service worker (offline/instalável) + botão "BAIXE NOSSO JOGO" ---
 registerServiceWorker();

@@ -363,9 +363,9 @@ export function drawCountdown(ctx: CanvasRenderingContext2D, value: number): voi
   ctx.textAlign = 'center';
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = 'rgba(0,0,0,0.7)';
-  ctx.fillText(label, MENU_W / 2 + 3, 153);
+  ctx.fillText(label, WIDTH / 2 + 3, 153);
   ctx.fillStyle = value <= 0 ? '#3dff8b' : '#ffd23f';
-  ctx.fillText(label, MENU_W / 2, 149);
+  ctx.fillText(label, WIDTH / 2, 149);
 }
 
 export interface ResultsScreenOptions {

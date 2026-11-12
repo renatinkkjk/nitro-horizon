@@ -1032,7 +1032,7 @@ export class Game {
     const backY = HEIGHT - 17; // altura do contato do pneu com o asfalto
     const lateralOffset = isDrift ? (37 + Math.random() * 5) : 0;
     this.smoke.push({
-      x: 200 + tire * 34 + (isDrift ? side * lateralOffset : 0),
+      x: WIDTH / 2 + tire * 34 + (isDrift ? side * lateralOffset : 0),
       y: backY + Math.random() * 4,
       vx: isDrift ? side * outward * (0.5 + Math.random()) + push + (Math.random() - 0.5) * 6 : (Math.random() - 0.5) * 5,
       vy: -(2 + 9 * strength) - Math.random() * 5,
@@ -1075,7 +1075,7 @@ export class Game {
         const angle = (Math.random() - 0.5) * 1.4;
         const speed = 3 + Math.random() * 3;
         this.exhaustParticles.push({
-          x: 200 + tip,
+          x: WIDTH / 2 + tip,
           y: HEIGHT - 26,
           vx: angle * speed,
           vy: 2 + Math.random() * 3,
@@ -1107,7 +1107,7 @@ export class Game {
     const flick = Math.sin(this.time * 42) * 0.5 + 0.5;
     const len = 10 + flick * 9;
     for (const tip of [-14, 14]) {
-      const x = 200 + tip;
+      const x = WIDTH / 2 + tip;
       const y = HEIGHT - 30;
       ctx.fillStyle = '#ff5a12';
       ctx.fillRect(Math.round(x - 3), Math.round(y), 6, Math.round(len));
@@ -1160,7 +1160,7 @@ export class Game {
 
     drawCar(
       ctx,
-      200,
+      WIDTH / 2,
       HEIGHT - 12,
       112,
       80,
