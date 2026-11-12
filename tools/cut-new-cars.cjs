@@ -198,6 +198,36 @@ const JOBS = [
   },
 ];
 
+/**
+ * Remove as sobras: as artes novas têm uma faixa solta acima/abaixo do carro
+ * (um resto do arquivo original). Fica só a banda principal — a que tem mais
+ * pixels — e o sprite é recortado novamente no conteúdo.
+ */
+function keepMainBand(image) {
+  const { width, height, data } = image.bitmap;
+  const rows = new Array(height).fill(0);
+  for (let y = 0; y < height; y += 1) {
+    let n = 0;
+    for (let x = 0; x < width; x += 1) if (data[(y * width + x) * 4 + 3] > 8) n += 1;
+    rows[y] = n;
+  }
+  const bands = [];
+  let start = -1;
+  for (let y = 0; y < height; y += 1) {
+    const on = rows[y] > 2;
+    if (on && start < 0) start = y;
+    if (!on && start >= 0) {
+      bands.push({ y0: start, y1: y - 1, px: rows.slice(start, y).reduce((a, b) => a + b, 0) });
+      start = -1;
+    }
+  }
+  if (start >= 0) bands.push({ y0: start, y1: height - 1, px: rows.slice(start).reduce((a, b) => a + b, 0) });
+  if (bands.length < 2) return image;
+  const main = bands.reduce((a, b) => (b.px > a.px ? b : a));
+  const trimmed = image.clone().crop(0, main.y0, width, main.y1 - main.y0 + 1);
+  return cropToContent(trimmed);
+}
+
 async function main() {
   const blackBg = (r, g, b) => Math.max(r, g, b) < 10;
   for (const job of JOBS) {
@@ -215,7 +245,7 @@ async function main() {
       { x: rear[0] - 2, y: 0, w: rear[1] - rear[0] + 5, h: image.bitmap.height },
     ];
     for (let i = 0; i < 3; i += 1) {
-      const sprite = cutWithGroundRefill(image, boxes[i], blackBg);
+      const sprite = keepMainBand(cutWithGroundRefill(image, boxes[i], blackBg));
       await sprite.quality(90).writeAsync(path.join(OUT, job.names[i]));
       console.log(job.label, job.names[i], sprite.bitmap.width + 'x' + sprite.bitmap.height);
     }

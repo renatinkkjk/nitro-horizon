@@ -57,8 +57,8 @@ interface SmokePuff {
 
 const WIDTH = 400;
 const HEIGHT = 280;
-const CAR_WORLD_WIDTH = 820;
-const CAR_WORLD_HEIGHT = 620;
+const CAR_WORLD_WIDTH = 1100;
+const CAR_WORLD_HEIGHT = 830;
 
 export { WIDTH, HEIGHT };
 
@@ -841,7 +841,7 @@ export class Game {
       if (w < 1.5 || h < 1.5) continue;
 
       // Limita o tamanho de carros muito próximos em vez de sumir com eles.
-      const shrink = w > 96 ? 96 / w : 1;
+      const shrink = w > 130 ? 130 / w : 1;
       const drawW = w * shrink;
       const drawH = h * shrink;
       const drawY = Math.min(cy, HEIGHT);
@@ -1002,9 +1002,9 @@ export class Game {
     drawCar(
       ctx,
       200,
-      266,
-      90,
-      65,
+      268,
+      112,
+      80,
       { body: player.body, accent: player.accent, style: player.spec.style },
       {
         brake: this.braking,

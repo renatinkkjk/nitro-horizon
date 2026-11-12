@@ -190,7 +190,7 @@ export function drawCarSelectScreen(
   ctx.stroke();
 
   const preview = { view: 'side' as const };
-  drawCar(ctx, 119, 151, 155, 88, { body: car.body, accent: car.accent, style: car.style }, preview);
+  drawCar(ctx, 119, 151, 186, 104, { body: car.body, accent: car.accent, style: car.style }, preview);
   ctx.restore();
 
   // Painel-direito: nome, perfil e atributos.
@@ -250,7 +250,7 @@ export function drawCarSelectScreen(
       ctx.strokeRect(x + 1, y + 1, cardW - 2, h - 2);
     }
 
-    drawCar(ctx, x + cardW / 2, y + 39, 52, 30, {
+    drawCar(ctx, x + cardW / 2, y + 40, 64, 38, {
       body: item.body,
       accent: item.accent,
       style: item.style,
