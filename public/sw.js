@@ -7,7 +7,7 @@
  *  - qualquer coisa nova entra no cache conforme é usada
  */
 const BASE = '/nitro-horizon/';
-const CACHE = 'nitro-horizon-v2';
+const CACHE = 'nitro-horizon-v3';
 
 const CORE = [
   BASE,
@@ -59,11 +59,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Demais recursos: cache-first (nomes dos sprites são fixos; o bundle tem hash).
+  // Demais recursos: stale-while-revalidate — responde rápido com o que tem
+  // em cache e atualiza por tras. Assim o app instalado no celular pega a
+  // versão nova na primeira abertura seguinte (sem precisar reinstalar).
   event.respondWith(
     caches.match(request).then((hit) => {
-      if (hit) return hit;
-      return fetch(request)
+      const network = fetch(request)
         .then((response) => {
           if (response && response.status === 200 && response.type === 'basic') {
             const copy = response.clone();
@@ -72,6 +73,7 @@ self.addEventListener('fetch', (event) => {
           return response;
         })
         .catch(() => hit);
+      return hit || network;
     }),
   );
 });
