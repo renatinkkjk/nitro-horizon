@@ -1,8 +1,45 @@
+export interface AudioVolumes {
+  music: number;
+  sfx: number;
+}
+
+const VOLUME_KEY = 'nitro-horizon-volumes';
+
+function clamp01(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+export function loadVolumes(): AudioVolumes {
+  try {
+    const raw = localStorage.getItem(VOLUME_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AudioVolumes>;
+      return {
+        music: typeof parsed.music === 'number' ? clamp01(parsed.music) : 0.45,
+        sfx: typeof parsed.sfx === 'number' ? clamp01(parsed.sfx) : 0.7,
+      };
+    }
+  } catch {
+    /* armazenamento indisponível: usa os padrões */
+  }
+  return { music: 0.45, sfx: 0.7 };
+}
+
+export function saveVolumes(volumes: AudioVolumes): void {
+  try {
+    localStorage.setItem(VOLUME_KEY, JSON.stringify(volumes));
+  } catch {
+    /* ignora */
+  }
+}
+
 export class AudioEngine {
   enabled = true;
 
   private ac: AudioContext | null = null;
   private master: GainNode | null = null;
+  private sfxGain: GainNode | null = null;
+  private musicGain: GainNode | null = null;
   private engineGain: GainNode | null = null;
   private engineFilter: BiquadFilterNode | null = null;
   private oscs: OscillatorNode[] = [];
@@ -17,8 +54,17 @@ export class AudioEngine {
     try {
       const ac = new AudioContext();
       const master = ac.createGain();
-      master.gain.value = 0.55;
+      master.gain.value = 1;
       master.connect(ac.destination);
+
+      // Efeitos e música têm volumes separados (ajustáveis nas opções).
+      const sfxGain = ac.createGain();
+      sfxGain.gain.value = 0.7;
+      sfxGain.connect(master);
+
+      const musicGain = ac.createGain();
+      musicGain.gain.value = 0;
+      musicGain.connect(master);
 
       const filter = ac.createBiquadFilter();
       filter.type = 'lowpass';
@@ -28,7 +74,7 @@ export class AudioEngine {
       const gain = ac.createGain();
       gain.gain.value = 0;
       filter.connect(gain);
-      gain.connect(master);
+      gain.connect(sfxGain);
 
       const oscA = ac.createOscillator();
       oscA.type = 'sawtooth';
@@ -49,12 +95,36 @@ export class AudioEngine {
 
       this.ac = ac;
       this.master = master;
+      this.sfxGain = sfxGain;
+      this.musicGain = musicGain;
       this.engineGain = gain;
       this.engineFilter = filter;
       this.oscs = [oscA, oscB];
       this.noise = buffer;
     } catch {
       this.enabled = false;
+    }
+  }
+
+
+  /** Contexto de áudio e nó de destino da trilha (música). */
+  getContext(): AudioContext | null {
+    return this.ac;
+  }
+
+  getMusicDestination(): AudioNode | null {
+    return this.musicGain;
+  }
+
+  setSfxVolume(value: number): void {
+    if (this.sfxGain && this.ac) {
+      this.sfxGain.gain.setTargetAtTime(clamp01(value), this.ac.currentTime, 0.04);
+    }
+  }
+
+  setMusicVolume(value: number): void {
+    if (this.musicGain && this.ac) {
+      this.musicGain.gain.setTargetAtTime(clamp01(value), this.ac.currentTime, 0.08);
     }
   }
 

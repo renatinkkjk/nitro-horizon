@@ -10,7 +10,7 @@ import type { CarDrawOptions, CarPaint } from './sprites';
  * os arquivos. O ?v= invalida o cache do arquivo quando a arte muda.
  */
 const SPRITE_BASE = '/nitro-horizon/sprites';
-const SPRITE_V = 5;
+const SPRITE_V = 6;
 
 function sprite(name: string): string {
   return `${SPRITE_BASE}/${name}?v=${SPRITE_V}`;

@@ -6,7 +6,7 @@ import { formatTime, panel, text, traceTrack } from '../render/hud';
 import { WIDTH, HEIGHT } from '../game';
 
 /** Mascote com URL estável (mesma razão dos sprites: sobrevive ao cache). */
-const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=5';
+const mascotUrl = '/nitro-horizon/sprites/mascote.png?v=6';
 
 function title(ctx: CanvasRenderingContext2D, value: string, y: number, size: number, color: string): void {
   ctx.font = `bold ${size}px monospace`;
@@ -73,6 +73,7 @@ export const MAIN_MENU_OPTIONS = [
   'CORRIDA RÁPIDA',
   'MODO HISTÓRIA · 3 CORRIDAS',
   'COMO JOGAR',
+  'OPÇÕES',
 ] as const;
 
 export const MAIN_MENU_COUNT = MAIN_MENU_OPTIONS.length;
@@ -93,10 +94,10 @@ export function drawTitleScreen(
   ctx.fillStyle = '#8b93bd';
   ctx.fillText('CORRIDA ARCADE PIXEL ART', WIDTH / 2, 138);
 
-  panel(ctx, 80, 148, 240, 98, 0.74);
+  panel(ctx, 80, 142, 240, 116, 0.74);
 
   MAIN_MENU_OPTIONS.forEach((label, i) => {
-    const y = 170 + i * 28;
+    const y = 164 + i * 26;
     const selected = i === menuIndex;
     if (selected) {
       ctx.fillStyle = 'rgba(34,224,255,0.16)';
@@ -615,4 +616,72 @@ export function drawPauseScreen(
   });
 
   text(ctx, '↑ ↓ NAVEGAR · ENTER OK · ESC VOLTAR', 200, 225, 8, '#4a5480', 'center', false);
+}
+
+export interface OptionsData {
+  /** 0 = música, 1 = efeitos, 2 = voltar. */
+  index: number;
+  music: number;
+  sfx: number;
+  blink: boolean;
+}
+
+/** Barra de volume em blocos (estilo retrô). */
+function volumeBar(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  value: number,
+  color: string,
+): void {
+  const segments = 10;
+  const filled = Math.round(value * segments);
+  for (let i = 0; i < segments; i += 1) {
+    const on = i < filled;
+    ctx.fillStyle = on ? color : '#242c48';
+    ctx.fillRect(x + i * 12, y - 6, 9, 9);
+  }
+}
+
+/** Tela de opções: volume da música e dos efeitos. */
+export function drawOptionsScreen(ctx: CanvasRenderingContext2D, data: OptionsData): void {
+  ctx.fillStyle = 'rgba(5,6,12,0.86)';
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  panel(ctx, 15, 22, 370, 230, 0.92);
+  title(ctx, 'OPÇÕES', 48, 15, '#22e0ff');
+
+  const rows: Array<[string, number | null]> = [
+    ['MÚSICA', data.music],
+    ['EFEITOS', data.sfx],
+    ['VOLTAR', null],
+  ];
+
+  rows.forEach(([label, value], i) => {
+    const y = 76 + i * 34;
+    const selected = i === data.index;
+    if (selected) {
+      ctx.fillStyle = 'rgba(34,224,255,0.16)';
+      ctx.fillRect(40, y - 16, 320, 24);
+      if (data.blink) text(ctx, '▶', 48, y, 10, '#22e0ff');
+    }
+    text(ctx, label, 66, y, 11, selected ? '#ffffff' : '#b8c2e8');
+    if (value !== null) {
+      volumeBar(ctx, 170, y, value, selected ? '#22e0ff' : '#5a6a9c');
+      text(
+        ctx,
+        `${Math.round(value * 100)}%`,
+        320,
+        y,
+        9,
+        selected ? '#22e0ff' : '#8b93bd',
+      );
+    }
+  });
+
+  ctx.font = '8px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#4a5480';
+  ctx.fillText('↑ ↓ SELECIONAR · ◀ ▶ AJUSTAR · ENTER VOLTAR', WIDTH / 2, 218);
+  ctx.fillText('A MÚSICA É UM TEMA ORIGINAL EM ESTILO SYNTHWAVE', WIDTH / 2, 234);
 }

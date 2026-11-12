@@ -328,13 +328,14 @@ async function main() {
     };
     const boxes = [boxOf(front), boxOf(side), boxOf(rear)];
     for (let i = 0; i < 3; i += 1) {
-      // 1) recorta a coluna do sprite e joga fora a faixa solta em cima/abaixo
-      //    (a arte original tem resto de outro objeto nas bordas da faixa);
-      // 2) só depois faz o flood-fill + refill da base, que assim reconstrói
-      //    apenas o pneu do carro e não cria uma "caixa" preta embaixo dele.
+      // As artes do usuário JÁ vêm com o fundo recortado (removebg), então
+      // NÃO usamos flood-fill: ele atravessava o fundo e comia as partes
+      // pretas do carro (lanterna, para-choque), deixando riscas/"pingos"
+      // pendurados embaixo. Usamos o alfa original + preenchimento só dos
+      // buracos internos de verdade.
       const box = boxes[i];
       const piece = image.clone().crop(box.x, box.y, box.w, box.h);
-      const sprite = cropToContent(cutWithGroundRefill(keepMainBand(piece), { x: 0, y: 0, w: piece.bitmap.width, h: piece.bitmap.height }, blackBg));
+      const sprite = cropToContent(fillInternalHoles(keepMainBand(piece)));
       await sprite.quality(90).writeAsync(path.join(OUT, job.names[i]));
       console.log(job.label, job.names[i], sprite.bitmap.width + 'x' + sprite.bitmap.height);
     }

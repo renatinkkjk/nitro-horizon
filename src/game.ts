@@ -1,4 +1,5 @@
-import { AudioEngine } from './core/audio';
+import { AudioEngine, loadVolumes, saveVolumes, type AudioVolumes } from './core/audio';
+import { MusicEngine } from './core/music';
 import { Input, type InputState } from './core/input';
 import { CAR_SPECS } from './entities/carspecs';
 import { Race, type Racer } from './race/race';
@@ -21,6 +22,7 @@ import {
   drawCarSelectScreen,
   drawCountdown,
   drawHelpScreen,
+  drawOptionsScreen,
   drawPauseScreen,
   drawResultsScreen,
   drawStoryIntro,
@@ -39,7 +41,17 @@ import {
 import type { Track } from './world/track';
 import { TRACKS } from './world/tracks';
 
-type GameState = 'title' | 'help' | 'car' | 'track' | 'race' | 'results' | 'storyIntro' | 'story' | 'storyEnd';
+type GameState =
+  | 'title'
+  | 'help'
+  | 'options'
+  | 'car'
+  | 'track'
+  | 'race'
+  | 'results'
+  | 'storyIntro'
+  | 'story'
+  | 'storyEnd';
 
 /** Pontuação do campeonato do modo história (1º ao 10º). */
 const STORY_POINTS = [15, 12, 10, 8, 6, 5, 4, 3, 2, 1];
@@ -67,6 +79,10 @@ export class Game {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly input = new Input();
   private readonly audio = new AudioEngine();
+  private readonly music = new MusicEngine();
+  private volumes: AudioVolumes = loadVolumes();
+  private optionsIndex = 0;
+  private lastMusicMix = -1;
 
   private state: GameState = 'title';
   private menuIndex = 0;
@@ -156,6 +172,7 @@ export class Game {
   }
 
   private update(dt: number, input: InputState): void {
+    this.updateMusicMix();
     switch (this.state) {
       case 'title': {
         this.menuZ += dt * 3400;
@@ -169,6 +186,8 @@ export class Game {
         }
         if (input.confirmPressed) {
           this.audio.init();
+          this.applyVolumes();
+          this.startMusic();
           this.audio.beep(660, 0.08);
           if (this.menuIndex === 0) {
             this.storyActive = false;
@@ -179,8 +198,10 @@ export class Game {
             // escolher o carro.
             this.storyIntroPage = 0;
             this.state = 'storyIntro';
-          } else {
+          } else if (this.menuIndex === 2) {
             this.state = 'help';
+          } else {
+            this.state = 'options';
           }
         }
         break;
@@ -188,6 +209,30 @@ export class Game {
 
       case 'help': {
         this.menuZ += dt * 2200;
+        if (input.confirmPressed || input.backPressed) {
+          this.audio.beep(440, 0.08);
+          this.state = 'title';
+        }
+        break;
+      }
+
+      case 'options': {
+        if (input.upPressed) {
+          this.optionsIndex = (this.optionsIndex + 2) % 3;
+          this.audio.beep(480, 0.04, 'square', 0.06);
+        }
+        if (input.downPressed) {
+          this.optionsIndex = (this.optionsIndex + 1) % 3;
+          this.audio.beep(480, 0.04, 'square', 0.06);
+        }
+        const dir = (input.leftPressed ? -1 : 0) + (input.rightPressed ? 1 : 0);
+        if (dir !== 0 && this.optionsIndex < 2) {
+          const key: 'music' | 'sfx' = this.optionsIndex === 0 ? 'music' : 'sfx';
+          const value = clamp(this.volumes[key] + dir * 0.1, 0, 1);
+          this.volumes = { ...this.volumes, [key]: value };
+          this.applyVolumes();
+          this.audio.beep(660, 0.05, 'square', 0.08);
+        }
         if (input.confirmPressed || input.backPressed) {
           this.audio.beep(440, 0.08);
           this.state = 'title';
@@ -374,6 +419,32 @@ export class Game {
         break;
       }
     }
+  }
+
+  /** Aplica os volumes escolhidos nas opções. */
+  private applyVolumes(): void {
+    this.audio.setSfxVolume(this.volumes.sfx);
+    this.music.setVolume(this.volumes.music);
+    this.audio.setMusicVolume(this.volumes.music);
+    saveVolumes(this.volumes);
+  }
+
+  /** Liga a trilha (precisa do AudioContext, criado no primeiro input). */
+  private startMusic(): void {
+    const ctx = this.audio.getContext();
+    const dest = this.audio.getMusicDestination();
+    if (!ctx || !dest) return;
+    this.music.setVolume(this.volumes.music);
+    this.music.start(ctx, dest);
+    this.audio.setMusicVolume(this.volumes.music);
+  }
+
+  /** Abaixa a musica enquanto o jogo esta pausado. */
+  private updateMusicMix(): void {
+    const mix = this.paused ? this.volumes.music * 0.3 : this.volumes.music;
+    if (Math.abs(mix - this.lastMusicMix) < 0.001) return;
+    this.lastMusicMix = mix;
+    this.audio.setMusicVolume(mix);
   }
 
   private changeCar(direction: number): void {
@@ -596,6 +667,16 @@ export class Game {
       case 'help':
         this.renderMenuBackground();
         drawHelpScreen(ctx, this.blink);
+        break;
+
+      case 'options':
+        this.renderMenuBackground();
+        drawOptionsScreen(ctx, {
+          index: this.optionsIndex,
+          music: this.volumes.music,
+          sfx: this.volumes.sfx,
+          blink: this.blink,
+        });
         break;
 
       case 'car':
