@@ -326,11 +326,9 @@ async function main() {
     };
     const boxes = [boxOf(front), boxOf(side), boxOf(rear)];
     for (let i = 0; i < 3; i += 1) {
-      // Recorta só as colunas do sprite (o alpha original já é o fundo).
-      const box = boxes[i];
-      const piece = image.clone().crop(box.x, box.y, box.w, box.h);
-      // Tira a faixa solta acima/abaixo e preenche buracos internos.
-      const sprite = cropToContent(fillInternalHoles(keepMainBand(piece)));
+      // Recorta a coluna do sprite, tira o fundo preto (flood-fill + refill
+      // da base) e remove a faixa solta acima/abaixo do carro.
+      const sprite = keepMainBand(cutWithGroundRefill(image, boxes[i], blackBg));
       await sprite.quality(90).writeAsync(path.join(OUT, job.names[i]));
       console.log(job.label, job.names[i], sprite.bitmap.width + 'x' + sprite.bitmap.height);
     }
