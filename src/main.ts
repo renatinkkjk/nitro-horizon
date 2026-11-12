@@ -1,4 +1,5 @@
 import { Game } from './game';
+import { registerServiceWorker, setupInstallButton } from './ui/pwa';
 import {
   isFullscreen,
   showFullscreenUnsupported,
@@ -38,6 +39,10 @@ if (isTouch) document.body.classList.add('touch');
 
 // Hook de depuração: expõe o estado do jogo no console do navegador.
 (window as unknown as { __nitro?: Game }).__nitro = game;
+
+// --- PWA: service worker (offline/instalável) + botão "BAIXE NOSSO JOGO" ---
+registerServiceWorker();
+setupInstallButton();
 
 // --- Tela cheia (PC: F ou menu de pausa / mobile: botão ⛶) ---
 

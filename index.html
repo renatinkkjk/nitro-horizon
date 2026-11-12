@@ -9,6 +9,13 @@
   <title>NITRO HORIZON</title>
   <meta name="description" content="Corrida arcade pseudo-3D em pixel art: 15 carros, 4 modelos, 3 pistas e HUD retrô." />
   <meta name="theme-color" content="#0b0d17" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Nitro Horizon" />
+  <link rel="manifest" href="/nitro-horizon/manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="/nitro-horizon/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/nitro-horizon/icon-192.png" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><rect width='16' height='16' fill='%230b0d17'/><rect x='2' y='6' width='12' height='6' fill='%2322e0ff'/><rect x='4' y='3' width='8' height='4' fill='%23ff3d7f'/></svg>" />
   <style>
     * { box-sizing: border-box; }
@@ -168,6 +175,41 @@
       .tbtn.brake { width: 56px; height: 48px; }
       .tbtn.nitro { width: 48px; height: 48px; }
     }
+
+    /* Botão de instalar o jogo (PWA) no canto da tela. */
+    #install {
+      position: fixed;
+      right: 10px; bottom: 10px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 12px;
+      border: 2px solid #22e0ff;
+      border-radius: 6px;
+      background: rgba(11, 13, 23, 0.94);
+      color: #22e0ff;
+      font: bold 11px ui-monospace, monospace;
+      letter-spacing: 1px;
+      cursor: pointer;
+      z-index: 20;
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #install.show { display: flex; }
+    #install:hover { background: rgba(34, 224, 255, 0.16); }
+    #install .ico { font-size: 14px; }
+    #install .x {
+      color: #5a6a9c;
+      font-weight: normal;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0 2px;
+    }
+    #install .x:hover { color: #ff3d7f; }
+    body.touch #install { bottom: calc(122px + env(safe-area-inset-bottom, 0px)); }
+    body.is-fullscreen #install { bottom: 10px; }
   </style>
 </head>
 <body>
@@ -176,6 +218,9 @@
   </div>
   <div id="hint">SETAS / WASD · ESPAÇO = NITRO · R = OLHAR PARA TRÁS · SHIFT/CTRL = MARCHA · ESC = PAUSA · F = TELA CHEIA</div>
   <div id="toast" role="status" aria-live="polite"></div>
+  <button id="install" type="button" aria-label="Instalar o Nitro Horizon no seu dispositivo">
+    <span class="ico">⬇</span><span>BAIXE NOSSO JOGO</span><span class="x" data-close title="Fechar">✕</span>
+  </button>
   <div id="touch">
     <div class="tgroup">
       <button class="tbtn" data-code="ArrowLeft" aria-label="Esquerda">◀</button>
